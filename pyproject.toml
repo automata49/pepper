@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pepper-review"
+version = "0.1.0"
+description = "Manual Google Sheets investment research and portfolio reviews"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+google = ["google-auth>=2.30,<3", "requests>=2.32,<3"]
+
+[project.scripts]
+pepper = "pepper.__main__:main"
+
+[tool.setuptools.package-data]
+pepper = ["schema.json"]
+
+[tool.setuptools.packages.find]
+include = ["pepper*"]

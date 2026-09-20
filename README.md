@@ -1,14 +1,28 @@
-# Investiny
+# Pepper
 
 개인 투자 리뷰 프레임워크: 공통 데이터 → Swing Trading / Position Growth 독립 평가 → Daily / Weekly / Portfolio 리뷰.
 
 계산은 코드로 재현하고, 해석은 근거와 함께 작성하며, 최종 매매 결정은 사용자가 내린다.
 
-## 현재 상태
+## 사용 시작
 
-- GitHub 연결 및 저장소 초기화 단계.
-- 이 README는 구현 기준이며, 데이터 수집·평가 엔진·자동 리포트는 아직 구현되지 않았다.
-- 실시간 시세, 증권계좌 연결, 자동 주문 기능은 현재 없다.
+[Google Sheets Workspace 열기](https://docs.google.com/spreadsheets/d/1liWeZKMPFAnSyUPhUVLpmCagA8pv2MoFK7T7ciJ6OyA/edit) · [입력 및 연결 안내](docs/google-sheets.md) · [가상 Portfolio 보고서](examples/reports/portfolio.md)
+
+수작업 데이터·평가 입력과 포트폴리오 시뮬레이션을 구현했습니다. **처음에는 가상 Demo 모드**입니다. 현재 수량과 계획 수량을 분리하고 계획 수량 변경에 따라 거래액·현금·비중·가격 위험이 갱신됩니다.
+
+- 8개 탭: Dashboard, Settings, Portfolio, Research, Financials, Valuation, Prices, Guide.
+- Swing/Growth 독립 평가, DuPont ROE 원인 분해, 현금흐름, EPS 성장 기대 역산.
+- 읽기 전용 Google Sheets 동기화, 검증, Daily/Weekly/Portfolio Markdown 및 JSON 보고서.
+- 시트 생성·연결된 Google Drive를 통한 읽기·예시 재계산까지 검증. 별도 PC/서버의 자동 읽기에는 Google ADC 인증을 한 번 설정해야 합니다.
+- 실시간 시세·계좌 연결·자동 주문·정기 실행은 활성화하지 않았습니다.
+
+```bash
+python -m pip install -e .
+python -m pepper review --snapshot examples/demo.json
+python -m unittest discover -s tests -v
+```
+
+인증 설정 후 `python -m pip install -e '.[google]'`와 `pepper sync`로 최신 수작업 입력을 읽습니다. 세부 설정은 위 안내를 참고하세요. 개인 자료와 실행 결과는 `data/`, `reports/`에 저장하며 Git에서 제외됩니다.
 
 ## 평가 체계
 
@@ -34,24 +48,18 @@
 | Weekly | 주도 테마·종목 변화, 두 전략 비교, 후보 순위, 가설 변화, 매매 복기 |
 | Portfolio | 전략별 비중, 현금, 종목·테마 중복, 집중도, 손절 기준 위험, 논리 훼손 여부 |
 
-## 예정 구조
+## 구현 구조
 
-- `config/`: 평가 기준과 데이터 공급자 설정
-- `context/`: 투자 원칙과 리뷰 기준
-- `prompts/`: Daily / Weekly / Portfolio 해석 템플릿
-- `src/data/`: 공급자별 수집과 공통 스키마
-- `src/metrics/`: 기술·재무·밸류에이션 계산
-- `src/review/`: 전략별 평가와 리포트 생성
-- `tests/`: 계산 경계값·결측·데이터 시점 검증
-- `docs/`: 지표 정의, 소스, 운영 방법
+- `config/workspace.json`: 연결된 Google Sheets ID
+- `pepper/sheets.py`, `schema.json`: 읽기 전용 연결·입력 스키마 검증
+- `pepper/engine.py`: 근거·시점 검증, 전략 평가, 재무·가격 기대·포트폴리오 계산
+- `pepper/reports.py`: Daily / Weekly / Portfolio 보고서와 스냅샷 비교
+- `prompts/review.md`: 선택적 GPT 해석 컨텍스트
+- `examples/`: 재현 가능한 가상 자료와 예시 보고서
+- `tests/`: 입력 누락·전량 매도·중복·미래 정보·위험·DuPont 검증
+- `docs/google-sheets.md`: 사용법·인증·계산 정의·구현 범위
 
-## 구현 순서
-
-1. 입력 스키마, 기준시각·출처·통화·단위 검증과 명시적 샘플 데이터.
-2. Swing 지표 및 Position Growth 계산 모듈과 테스트.
-3. Daily / Weekly / Portfolio 보고서 생성 및 이전 스냅샷 비교.
-4. 실제 데이터 공급자 연결, 오류·누락·지연 처리.
-5. 검증을 통과한 뒤 정기 실행과 선택적 GPT 해석 연결.
+이전 README의 전체 자동 수집 구상 중 현재 구현은 수작업 입력 기반입니다. 시장 일정·뉴스·순위·실제 매매 복기는 수작업 확인 영역으로 명시합니다. Weekly는 7일 이상 전 같은 모드의 스냅샷이 쌓인 후 비교하며, 가격 변화는 배당·분할 조정 총수익률이 아닙니다.
 
 ## 검토할 외부 소스
 

@@ -1,0 +1,245 @@
+{
+  "asof": "2026-09-18",
+  "mode": "Demo",
+  "issues": [],
+  "portfolio": {
+    "positions": [
+      {
+        "id": "DEMO-P1",
+        "ticker": "DEMO_US",
+        "strategy": "Swing",
+        "sector": "Technology",
+        "quantity": 10,
+        "target": 15,
+        "value": 1300000,
+        "planned_value": 1950000,
+        "trade": 650000,
+        "price_pnl": 260000,
+        "risk": 130000,
+        "planned_risk": 195000,
+        "stress_loss": 363999.9999999999,
+        "thesis": "가상 예시: 주도주 돌파",
+        "invalidation": "가상 예시: 가격 기준 이탈",
+        "warnings": []
+      },
+      {
+        "id": "DEMO-P2",
+        "ticker": "DEMO_KR",
+        "strategy": "Growth",
+        "sector": "Industrials",
+        "quantity": 20,
+        "target": 20,
+        "value": 1000000,
+        "planned_value": 1000000,
+        "trade": 0,
+        "price_pnl": 100000,
+        "risk": 200000,
+        "planned_risk": 200000,
+        "stress_loss": 199999.99999999994,
+        "thesis": "가상 예시: 실적 성장",
+        "invalidation": "가상 예시: 성장 논리 훼손",
+        "warnings": []
+      }
+    ],
+    "errors": [],
+    "complete": true,
+    "nav": 7900000,
+    "cash": 5600000,
+    "planned_nav": 7899350.0,
+    "fees": 650.0,
+    "planned_cash": 4949350.0,
+    "risk": 330000,
+    "planned_risk": 395000,
+    "risk_incomplete": false,
+    "weights": {
+      "DEMO_US": 0.16455696202531644,
+      "DEMO_KR": 0.12658227848101267
+    },
+    "planned_weights": {
+      "DEMO_US": 0.2468557539544393,
+      "DEMO_KR": 0.12659269433560988
+    },
+    "sectors": {
+      "Technology": 1300000.0,
+      "Industrials": 1000000.0
+    },
+    "strategies": {
+      "Swing": 1300000.0,
+      "Growth": 1000000.0
+    },
+    "warnings": [
+      "계획 가격 위험 한도 초과"
+    ]
+  },
+  "research": {
+    "DEMO_KR": {
+      "Swing": {
+        "Trend": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "RS": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "Volume": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "Entry": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "Risk": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        }
+      },
+      "Growth": {
+        "C": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "A": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "N": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "S": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "L": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "I": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "M": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "DuPont": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "CashFlow": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "Valuation": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        }
+      }
+    },
+    "DEMO_US": {
+      "Swing": {
+        "Trend": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "RS": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "Volume": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "Entry": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "Risk": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        }
+      },
+      "Growth": {
+        "C": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "A": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "N": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "S": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "L": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "I": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "M": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "DuPont": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "CashFlow": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        },
+        "Valuation": {
+          "verdict": "UNKNOWN",
+          "evidence": null
+        }
+      }
+    }
+  },
+  "growth": {
+    "DEMO_US": {
+      "factors": [
+        0.16,
+        1.25,
+        1.8461538461538463
+      ],
+      "roe": 0.36923076923076925,
+      "fcf": 180,
+      "cash_conversion": 1.1666666666666667,
+      "roe_change": 0.11923076923076928,
+      "roe_drivers": {
+        "margin": 0.07537271756021757,
+        "turnover": 0.041713772338772374,
+        "leverage": 0.002144279331779344
+      }
+    }
+  },
+  "valuation": {
+    "DEMO_US": {
+      "required_eps_cagr": 0.10000000000000009,
+      "assumed_eps_cagr": 0.2,
+      "growth_headroom": 0.09999999999999992,
+      "terminal_price": 172.79999999999998,
+      "price_return_cagr": 0.19999999999999996,
+      "assumptions": {
+        "기간 년": 3,
+        "말기 PER": 25,
+        "요구수익률": 0.1,
+        "가정 근거": "가상 시나리오: 컨센서스 아님"
+      }
+    }
+  },
+  "prices": {
+    "DEMO_US": 100,
+    "DEMO_KR": 50000
+  }
+}
