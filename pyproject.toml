@@ -11,6 +11,7 @@ dependencies = []
 
 [project.optional-dependencies]
 google = ["google-auth>=2.30,<3", "requests>=2.32,<3"]
+automation = ["google-auth>=2.30,<3", "requests>=2.32,<3", "finance-datareader>=0.9,<1", "pykrx>=1.0,<2", "OpenDartReader>=0.2,<1", "openai>=1.40,<4"]
 
 [project.scripts]
 pepper = "pepper.__main__:main"

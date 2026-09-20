@@ -1,0 +1,46 @@
+name: Scheduled investment review
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 7 * * 1-5'
+    - cron: '30 21 * * 1-5'
+permissions:
+  contents: read
+concurrency:
+  group: pepper-review
+  cancel-in-progress: false
+jobs:
+  review:
+    # Explicit deployment gate: avoid pretending missing credentials are live.
+    if: vars.PEPPER_AUTOMATION_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+      DART_API_KEY: ${{ secrets.DART_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+      GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+      PEPPER_DRIVE_FOLDER: ${{ vars.PEPPER_DRIVE_FOLDER }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[automation]'
+      - name: Prepare private credentials
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os, pathlib, json
+          required=['GOOGLE_CREDENTIALS_JSON','PEPPER_DRIVE_FOLDER','SEC_USER_AGENT','DART_API_KEY']
+          if any(not os.getenv(k) for k in required):
+              raise SystemExit('Required deployment settings are missing')
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'google-credentials.json'
+          p.write_text(json.dumps(json.loads(os.environ['GOOGLE_CREDENTIALS_JSON'])))
+          p.chmod(0o600)
+          with open(os.environ['GITHUB_ENV'],'a') as f:f.write('GOOGLE_APPLICATION_CREDENTIALS='+str(p)+'\n')
+          PY
+      - name: Collect and archive private reports
+        run: python -m pepper automate --automation-config config/automation.json --drive-folder "$PEPPER_DRIVE_FOLDER"
+      # No public artifacts, no portfolio data committed, no credential output.

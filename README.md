@@ -24,6 +24,18 @@ python -m unittest discover -s tests -v
 
 인증 설정 후 `python -m pip install -e '.[google]'`와 `pepper sync`로 최신 수작업 입력을 읽습니다. 세부 설정은 위 안내를 참고하세요. 개인 자료와 실행 결과는 `data/`, `reports/`에 저장하며 Git에서 제외됩니다.
 
+## 자동 수집 및 거래일지 통합
+
+Trading_Journal_V2의 거래·보유 스냅샷·재무 참고자료·유니버스·주문 계획을 Pepper의 비공개 시트에 통합했습니다. 원본 파일과 키는 저장소에 포함하지 않습니다.
+
+- `pepper import-journal --journal /private/path/Trading_Journal_V2.xlsx`
+- `pepper automate --asof YYYY-MM-DD`: 가격·공시·재무·수급 수집과 기술지표/전략 평가.
+- `pepper automate --sheets --asof YYYY-MM-DD`: Pepper 시트 입력과 활성 Watchlist 연결.
+- `--llm`: 설정된 OpenAI 모델로 선택적 해석. `--drive-folder ID`: 비공개 백업.
+- `pepper doctor`: 필요한 패키지와 인증 존재 확인(값은 출력하지 않음).
+
+설치: `python -m pip install -e '.[automation]'`. [운영 안내](docs/automation.md)와 [구현·차단 상태](docs/BUILD_STATUS.md)를 확인하세요. 공급자 연결 코드와 스케줄 정의는 구현됐지만 키·권한이 없는 서비스까지 운영 완료된 것은 아닙니다. GPT와 정기 실행은 인증/배포 설정 후 활성화합니다.
+
 ## 평가 체계
 
 | 영역 | 평가 항목 | 결과 |

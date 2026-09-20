@@ -1,0 +1,17 @@
+{
+  "universe": [
+    {"ticker":"AAPL","market":"US","asset_class":"Stock","benchmark":"SPY","cik":"0000320193"},
+    {"ticker":"005930","market":"KR","asset_class":"Stock","benchmark":"KS11","corp_code":"00126380"}
+  ],
+  "use_journal_universe": false,
+  "max_symbols": 30,
+  "provider_timeout": 60,
+  "collect_kr_flows": true,
+  "rules": {
+    "max_price_age_days": 4,
+    "max_fundamental_period_age_days": 200,
+    "quarter_eps_growth": 0.25,
+    "annual_eps_cagr": 0.25
+  },
+  "description": "Public smoke-test universe only, not a recommendation or the user's holdings. Use private config for actual universe."
+}
