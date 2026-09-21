@@ -1,5 +1,7 @@
 # ETF 구성 종목 연결
 
+현재 사용자 정책: **DRAM은 ETF만 추적하며 구성 종목은 수집/추가하지 않는다.** 재현 수집 스크립트에서도 DRAM을 제외했다. Roundhill parser 자체는 범용 테스트용으로 남아 있으나 활성 수집 설정에 포함되지 않는다.
+
 `pepper.etf_holdings`는 Global X CSV, VanEck XLSX, Roundhill CSV를 검사한다. 가격/투자 판단은 계산하지 않는다.
 
 - 원본 instrument 행을 보존한다. 주식만으로 비중을 다시 100%로 만들지 않는다.
@@ -26,5 +28,7 @@ python -m unittest discover -s tests -q
 - [DRAM](https://www.roundhillinvestments.com/etf/dram/)
 
 DRAM 원자료 `Date`는 웹 화면 표시일과 다르다(사이트는 하루 차감). 파일 날짜를 보존하고 이 주의사항을 표시한다. SKHY 상장시장과 CXMT 스왑 매핑은 추가 검증 전까지 자동 평가하지 않는다.
+
+DRAM 가격은 거래소를 명시한 `BATS:DRAM`을 사용한다. 무거래소 티커는 다른 상품의 가격을 반환할 수 있으므로 사용하지 않는다. CLOU/BUG는 NASDAQ, CRAK은 NYSEARCA를 명시한다.
 
 기존 Pepper의 Guide에서 연결된 Journal 복사본을 연다. 기존 Price_US/Price_KR/Added_Stocks와 계산 의존성을 네이티브 복사로 유지했다. 기존 Pepper 안으로 세 탭을 직접 병합한 상태는 아니다. ETF_Review는 전체 구성 자료, Watchlist는 평가 활성화, Orders는 사용자의 수동 계획에 사용한다. 자동 주문은 실행하지 않는다.

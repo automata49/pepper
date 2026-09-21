@@ -168,6 +168,12 @@ def markdown(result,kind,previous=None):
         lines+=['- '+clean(e) for e in l['errors']]
         lines+=['','## 주문 계획 점검',clean(result.get('order_checks',{}))]
     if kind=='Weekly':lines+=['','## 주간 복기','- 신규 진입·분할매수·청산 사유와 원래 Plan ID 대조','- 손절 준수 여부, Setup별 실현 결과 검토','- N/S/I와 향후 이벤트는 수작업 근거 확인. 공시일은 미래 실적 발표 예정일이 아닙니다.']
+    if result.get('manual_supplements'):
+        lines+=['', '## 수작업 보완 근거 — 독립 검증 전',
+                '아래 입력은 자동 점수·ROE·가치평가를 덮어쓰지 않습니다. 기간·통화·출처를 대조한 후 사용합니다.']
+        lines+=['- '+clean(item) for item in result['manual_supplements']]
+    if result.get('supplement_issues'):
+        lines+=['', '## 보완 입력 오류']+['- '+clean(item) for item in result['supplement_issues']]
     return '\n'.join(lines)+'\n'
 
 
@@ -185,6 +191,10 @@ def save_run(result,root='data/runs',output='reports',llm=False):
     encoded=json.dumps(result,ensure_ascii=False,indent=2,allow_nan=False)
     (dest/'result.json').write_text(encoded)
     (out/'result.json').write_text(encoded)
+    from .workspace import build_workspace
+    workspace=json.dumps(build_workspace(result,result.get('data_requests',[])),ensure_ascii=False,indent=2,allow_nan=False)
+    (dest/'workspace.json').write_text(workspace)
+    (out/'workspace.json').write_text(workspace)
     for kind in ['Daily','Weekly','Portfolio']:
         text=markdown(result,kind,weekly if kind=='Weekly' else daily)
         (dest/(kind.lower()+'.md')).write_text(text)

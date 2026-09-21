@@ -9,7 +9,7 @@ SOURCES = {
     'CLOU': 'https://assets.globalxetfs.com/funds/holdings/clou_full-holdings_20260918.csv',
     'BUG': 'https://assets.globalxetfs.com/funds/holdings/bug_full-holdings_20260918.csv',
     'CRAK': 'https://www.vaneck.com/us/en/etf/equity/crak/holdings/download/xlsx/',
-    'DRAM': 'https://www.roundhillinvestments.com/assets/data/FilepointRoundhill.40RU.RU_Holdings_09182026.csv',
+    # User policy: DRAM is ETF-only. Do not collect/import its constituents.
 }
 
 def collect(item):

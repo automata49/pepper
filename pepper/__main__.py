@@ -20,7 +20,10 @@ def main():
     p.add_argument('--llm', action='store_true', help='Send validated report to configured OpenAI model')
     p.add_argument('--drive-folder', help='Explicit private Drive folder ID for durable backup')
     p.add_argument('--sheets', action='store_true', help='Read manual inputs and journal tabs from connected workspace')
+    p.add_argument('--publish-sheets', action='store_true', help='Write dedicated Review_* and Data_Requests tabs; preserves manual input columns')
     args = p.parse_args()
+    if args.publish_sheets and args.command != 'automate':
+        p.error('--publish-sheets is only supported with automate')
     if args.command == 'doctor':
         from .operations import doctor
         print(json.dumps(doctor(),indent=2));return
@@ -45,6 +48,12 @@ def main():
         asof=args.asof or (date.today()-timedelta(days=1)).isoformat()
         if manual and manual['asof']!=asof:p.error('Manual snapshot asof must match automated run')
         result=run(config,asof,journal,manual)
+        if args.sheets or args.publish_sheets:
+            from .workspace import read_requests,session_for_workspace,attach_supplements
+            sid=json.loads(Path(args.config).read_text())['spreadsheet_id']
+            _,requests=read_requests(sid,session_for_workspace())
+            result['data_requests']=requests
+            attach_supplements(result,requests)
         if args.drive_folder:
             from .operations import restore_drive
             restore_drive(args.drive_folder)
@@ -55,6 +64,9 @@ def main():
         if args.drive_folder:
             from .operations import backup_drive
             backup_drive(dest,args.drive_folder)
+        if args.publish_sheets:
+            from .workspace import publish
+            publish(sid,result)
         print(json.dumps({'coverage':result['coverage'],'issues':len(result['issues']),'saved':str(dest)},ensure_ascii=False))
         return
     if args.command == 'review' and not args.snapshot:
