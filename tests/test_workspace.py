@@ -1,6 +1,7 @@
 import unittest
 from copy import deepcopy
-from pepper.workspace import build_workspace, attach_supplements, publish_requests, parse_request_values, REQUEST_HEADERS
+from pepper.workspace import build_workspace, attach_supplements, publish_requests, parse_request_values, read_requests, REQUEST_HEADERS
+from unittest.mock import Mock
 
 
 def result():
@@ -62,6 +63,31 @@ class WorkspaceTests(unittest.TestCase):
         r = {'asof': '2026-09-21', 'instruments': {}}
         rows = build_workspace(r, old)['requests']
         self.assertEqual(rows[0]['auto_state'], 'OUT_OF_SCOPE')
+        self.assertEqual(rows[0]['input_value'], 'keep')
+
+    def test_duplicate_input_ids_rejected_at_read_boundary(self):
+        with self.assertRaises(ValueError):
+            parse_request_values([REQUEST_HEADERS, ['same'], ['same']])
+
+    def test_invalid_queue_positions_rejected(self):
+        for position in (-1, 0, 3, True, 4.5, '5'):
+            old = build_workspace(result())['requests'][:1]
+            old[0]['_sheet_row'] = position
+            with self.subTest(position=position), self.assertRaises(ValueError):
+                publish_requests({'sheets': []}, build_workspace(result(), old), old)
+
+    def test_extended_queue_read_preserves_late_input_position(self):
+        meta = {'sheets': [{'properties': {'title': 'Data_Requests', 'sheetId': 123,
+                'gridProperties': {'rowCount': 3000, 'columnCount': 23}}}]}
+        values = [REQUEST_HEADERS] + [[] for _ in range(2000)] + [['late'] + ['']*9 + ['keep']]
+        session = Mock()
+        response1, response2 = Mock(), Mock()
+        response1.json.return_value = meta
+        response2.json.return_value = {'values': values}
+        session.get.side_effect = [response1, response2]
+        _, rows = read_requests('test-only', session)
+        self.assertTrue(session.get.call_args.args[0].endswith('A4:Q3000'))
+        self.assertEqual(rows[0]['_sheet_row'], 2004)
         self.assertEqual(rows[0]['input_value'], 'keep')
 
 

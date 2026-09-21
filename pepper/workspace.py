@@ -126,8 +126,11 @@ def parse_request_values(values):
         raise ValueError('Data_Requests header mismatch')
     if any(row and not row[0] and any(x not in (None, '') for x in row[10:]) for row in values[1:]):
         raise ValueError('Manual input without request_id; restore row identity before publishing')
-    return [dict(zip(REQUEST_HEADERS, row + [None]*len(REQUEST_HEADERS)))
-            for row in values[1:] if row and row[0]]
+    parsed = [dict(zip(REQUEST_HEADERS, row + [None]*len(REQUEST_HEADERS)))
+              for row in values[1:] if row and row[0]]
+    if len({row['request_id'] for row in parsed}) != len(parsed):
+        raise ValueError('Duplicate request_id; refusing ambiguous manual input')
+    return parsed
 
 
 def publish_requests(metadata, workspace, previous):
@@ -185,6 +188,8 @@ def publish_requests(metadata, workspace, previous):
         raise ValueError('Duplicate request IDs')
     if len(set(positions.values())) != len(positions):
         raise ValueError('Duplicate request row positions')
+    if any(type(pos) is not int or pos < 4 for pos in positions.values()):
+        raise ValueError('Invalid request row position; refusing header overwrite')
     next_row = max(positions.values(), default=3)+1
     for row in workspace['requests']:
         key = row['request_id']
@@ -211,7 +216,12 @@ def read_requests(spreadsheet_id, session):
                 raise ValueError(f'{name}: not a recognized machine-owned view; refusing to clear it')
     if not any(s['properties']['title'] == 'Data_Requests' for s in metadata['sheets']):
         return metadata, []
-    response = session.get(base+'/values/Data_Requests!A4:Q2000', params={'valueRenderOption': 'UNFORMATTED_VALUE', 'dateTimeRenderOption': 'FORMATTED_STRING'}, timeout=60)
+    # Read the entire queue, including manually extended grids. A fixed bound
+    # can hide existing IDs/inputs and cause later publication to overwrite them.
+    queue = next(s['properties'] for s in metadata['sheets']
+                 if s['properties']['title'] == 'Data_Requests')
+    last_row = queue['gridProperties']['rowCount']
+    response = session.get(base+f'/values/Data_Requests!A4:Q{last_row}', params={'valueRenderOption': 'UNFORMATTED_VALUE', 'dateTimeRenderOption': 'FORMATTED_STRING'}, timeout=60)
     response.raise_for_status()
     values = response.json().get('values', [])
     parsed = parse_request_values(values)
