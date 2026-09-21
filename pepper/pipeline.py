@@ -52,6 +52,10 @@ def run(config,asof,journal=None,manual=None):
         t,market=u['ticker'],u['market'];key=f'{market}:{t}'
         entry={**u,'technical':None,'swing':{'status':'DATA_REQUIRED'},'growth':None,'flows':None}
         result['instruments'][key]=entry
+        if market not in ('US', 'KR'):
+            entry['swing']={'status':'COVERAGE_PENDING'}
+            result['issues'].append(f'{key}: unsupported or unverified market; not routed to US prices or DART')
+            continue
         try:
             bars=collect('prices',[u.get('provider_symbol',t),start,asof],timeout=config.get('provider_timeout',90))
             m=calculate(bars,benchmarks.get(u['benchmark'],[]),asof)
