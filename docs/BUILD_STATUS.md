@@ -50,3 +50,12 @@
 최신 main과 이 문서를 읽고 현 상태를 먼저 확인한다. `python -m unittest discover -s tests -q`, `python -m pepper doctor`를 실행한다. 추가 구현/검증 결과를 이 문서에 남긴다. data/, reports/, 원본 XLSX, 실제 보유/거래 정보와 비밀키를 공개 GitHub에 올리지 않는다. 사용자 원본 Trading_Journal_V2는 수정하지 않는다.
 
 사용량 한도를 감지하거나 해제할 API는 없다. 예약 재개 작업은 실행 시 사용 가능한 권한·한도 내에서만 수행되며 한도 우회 또는 정확한 리셋 시각 재개를 보장하지 않는다.
+
+
+## 최신 사용자 지시 — Sheets 간략화
+
+- Journal은 Home/Price_US/Price_KR/Portfolio/Trades/ETF_Review 6개 탭만 노출한다. 기존 20개 탭은 삭제/이름 변경 없이 숨김으로 보존한다. Home은 맨 뒤에 추가하여 기존 순서를 유지한다.
+- **Price_US와 Price_KR을 수정하지 말 것.** 값·수식·서식·행열·그룹·시트 속성 변경 모두 제외한다. 의존 계산 탭의 데이터도 이번 정리에서 수정하지 않았다.
+- 보완 입력/Watchlist/자동 평가 상세는 Home에서 기존 연결 Workspace로 이동한다. 입력 원본을 중복 생성하지 않는다. Journal 장부와 기존 연결 장부는 자동 양방향 동기화되지 않는다.
+- 종합 시장/뉴스/공시 분석과 Daily/Weekly/Portfolio 서술은 ChatGPT 담당. Sheets는 입력·상세 근거·실행 기록 중심이다. 새로운 근거 없이는 Growth 판단을 바꾸지 않는다.
+- 상세 운영 규칙은 docs/google-sheets.md를 먼저 읽는다. 이 화면 정리를 전체 자동화 완료로 오인하지 않는다. DRAM ETF-only 정책 유지.
