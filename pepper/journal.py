@@ -158,3 +158,31 @@ def check_plan(plan, nav, cash, held_qty, fills=0, risk_limit=.01, min_rr=2):
         return {'remaining':remaining,'risk':risk,'reward_risk':rr,'status':'PASS' if not reasons else 'BLOCKED_'+','.join(reasons)}
     except (ValueError,KeyError,TypeError):
         return {'status':'INPUT_REQUIRED','risk':None,'reward_risk':None}
+
+
+def check_plan_book(plans, portfolio, ledger_result):
+    """Fail closed before reserving cash/risk from an ambiguous journal."""
+    ids=[p.get('id') for p in plans]
+    if any(i in (None, '') for i in ids) or len(set(ids))!=len(ids):
+        return {'checks':[{'id':p.get('id'),'status':'BLOCKED_DUPLICATE_OR_MISSING_PLAN_ID'} for p in plans],
+                'reserved_buy_risk':None,'cash_after_approved_buys':None,
+                'note':'Plan IDs must be present and unique; no cash or risk was reserved.'}
+    if not ledger_result.get('complete'):
+        return {'checks':[{'id':p['id'],'status':'BLOCKED_LEDGER_INCOMPLETE'} for p in plans],
+                'reserved_buy_risk':None,'cash_after_approved_buys':None,
+                'note':'Trade ledger is incomplete; fills and available holdings are not reliable.'}
+    remaining_cash=portfolio.get('cash')
+    total_risk=0.
+    checks=[]
+    for plan in plans:
+        if not portfolio.get('complete') or remaining_cash is None:
+            checks.append({'id':plan['id'],'status':'PORTFOLIO_INPUT_REQUIRED'});continue
+        held=sum(p['quantity'] for p in portfolio['positions'] if p['ticker']==plan['ticker'])
+        fills=ledger_result['fills_by_plan'].get(plan['id'],0)
+        check=check_plan(plan,portfolio['nav'],remaining_cash,held,fills)
+        checks.append({'id':plan['id'],**check})
+        if check['status']=='PASS' and plan['action']=='BUY':
+            remaining_cash-=check['remaining']*plan['entry']*plan['fx']
+            total_risk+=check['risk']
+    return {'checks':checks,'reserved_buy_risk':total_risk,'cash_after_approved_buys':remaining_cash,
+            'note':'Pending sell proceeds are not spendable cash. Plan checks exclude fees and need execution confirmation.'}

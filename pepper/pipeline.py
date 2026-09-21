@@ -9,7 +9,7 @@ from pathlib import Path
 from .technical import calculate,classify,percentiles
 from .providers import normalize_sec,normalize_dart
 from .fundamentals import evaluate_fundamentals
-from .journal import ledger,check_plan
+from .journal import ledger,check_plan_book
 
 
 def collect(provider,args,cache='data/cache',timeout=90):
@@ -107,22 +107,8 @@ def run(config,asof,journal=None,manual=None):
         result['opening_snapshot']=journal['opening_snapshot']
         # Opening snapshot is a separate reconciliation reference, never summed.
         result['plans']=journal['plans']
-        checks=[]
         portfolio=(manual or {}).get('portfolio',{})
-        remaining_cash=portfolio.get('cash')
-        total_risk=0.
-        for plan in journal['plans']:
-            if not portfolio.get('complete') or remaining_cash is None:
-                checks.append({'id':plan['id'],'status':'PORTFOLIO_INPUT_REQUIRED'});continue
-            held=sum(p['quantity'] for p in portfolio['positions'] if p['ticker']==plan['ticker'])
-            fills=result['ledger']['fills_by_plan'].get(plan['id'],0)
-            check=check_plan(plan,portfolio['nav'],remaining_cash,held,fills)
-            checks.append({'id':plan['id'],**check})
-            if check['status']=='PASS' and plan['action']=='BUY':
-                remaining_cash-=check['remaining']*plan['entry']*plan['fx']
-                total_risk+=check['risk']
-        result['order_checks']={'checks':checks,'reserved_buy_risk':total_risk,'cash_after_approved_buys':remaining_cash,
-                                'note':'Pending sell proceeds are not spendable cash. Plan checks exclude fees and need execution confirmation.'}
+        result['order_checks']=check_plan_book(journal['plans'],portfolio,result['ledger'])
         result['fundamental_reference']=journal['fundamental_reference']
     return result
 

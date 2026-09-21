@@ -2,7 +2,7 @@ import unittest
 from datetime import date,timedelta
 from pepper.technical import calculate,classify,percentiles
 from pepper.fundamentals import ttm_flow
-from pepper.journal import ledger,check_plan,ticker
+from pepper.journal import ledger,check_plan,check_plan_book,ticker
 
 def bars(n=300):
     return [dict(date=(date(2025,1,1)+timedelta(days=i)).isoformat(),open=100+i,high=102+i,low=99+i,close=101+i,volume=1000) for i in range(n)]
@@ -43,6 +43,16 @@ class AutomationTests(unittest.TestCase):
         p=dict(quantity=10,entry=100,stop=90,target=130,fx=1,action='BUY')
         r=check_plan(p,10000,1000,0);self.assertEqual(r['status'],'PASS');self.assertEqual(r['reward_risk'],3)
         self.assertIn('CASH',check_plan(p,10000,500,0)['status'])
+    def test_plan_book_fails_closed_on_duplicate_id_or_bad_ledger(self):
+        p=dict(id='P1',ticker='T',quantity=1,entry=100,stop=90,target=130,fx=1,action='BUY')
+        portfolio={'complete':True,'cash':1000,'nav':10000,'positions':[]}
+        good={'complete':True,'fills_by_plan':{}}
+        duplicate=check_plan_book([p,dict(p)],portfolio,good)
+        self.assertIsNone(duplicate['reserved_buy_risk'])
+        self.assertTrue(all(x['status'].startswith('BLOCKED_') for x in duplicate['checks']))
+        bad=check_plan_book([p],portfolio,{'complete':False,'fills_by_plan':{}})
+        self.assertEqual(bad['checks'][0]['status'],'BLOCKED_LEDGER_INCOMPLETE')
+        self.assertIsNone(bad['cash_after_approved_buys'])
     def test_kr_ticker(self):
         self.assertEqual(ticker(660,'KR'),'000660')
 
