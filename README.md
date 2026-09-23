@@ -26,11 +26,11 @@ python -m unittest discover -s tests -v
 
 ## 자동 수집 및 간략 연구 시트
 
-현재 사용자 화면은 Price_US·Price_KR·Fundamental·보완입력입니다. 삭제된 거래·보유·주문 탭은 다시 만들지 않습니다.
+현재 사용자 화면은 Price_US·Price_KR·보완입력입니다. Fundamental의 역할은 Price 시트 오른쪽 CAN SLIM 열로 통합했습니다. 삭제된 거래·보유·주문 탭은 다시 만들지 않습니다.
 
 - `pepper automate --asof YYYY-MM-DD`: 가격·공시·재무·수급 수집과 기술지표/전략 평가.
 - `pepper automate --research-sheets --asof YYYY-MM-DD`: 간략 시트의 대상 종목 참고값과 보완입력 읽기.
-- `--publish-research-sheets`: 보완입력 A:J에만 미검증 항목 게시. K:Q와 Price/Fundamental은 쓰지 않음.
+- `--publish-research-sheets`: 보완입력 A:J에만 미검증 항목 게시. K:Q는 보존.
 - `--llm`: 설정된 OpenAI 모델로 선택적 해석. `--drive-folder ID`: 비공개 백업.
 - `pepper doctor`: 필요한 패키지와 인증 존재 확인(값은 출력하지 않음).
 

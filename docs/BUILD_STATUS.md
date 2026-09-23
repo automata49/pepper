@@ -2,11 +2,11 @@
 
 ## 최우선 현재 범위 — 2026-09-23
 
-- 아래 Portfolio/Trades/Orders 기록은 과거 이력이다. 현재 범위는 Price_US/Price_KR/Fundamental/보완입력과 ChatGPT 분석이다. 삭제된 장부/주문/복기 탭과 데이터는 재생성하지 않는다.
+- 아래 Portfolio/Trades/Orders 기록은 과거 이력이다. 현재 범위는 Price_US/Price_KR의 가격·CAN SLIM, 보완입력과 ChatGPT 분석이다. 삭제된 Fundamental/장부/주문/복기 탭과 데이터는 재생성하지 않는다.
 - 이전 실행에서 Journal 17개 탭과 구 Workspace 장부/대시보드 6개 탭을 삭제하고 보완입력을 Journal로 복사했다. 가격 의존 계산 탭 6개는 숨김 보존, 거래 참조 439개 셀은 비웠다. 이번에는 추가 시트 변경 없음.
 - 레거시 CLI 장부/게시 경로 차단. --research-sheets는 비공개 PEPPER_RESEARCH_SHEET_ID의 보완입력만 읽고, 지정 탭 누락은 실패 처리한다. 기존 Review/장부는 조회하지 않는다.
 - GitHub workflow는 무조건 중지로 변경. 이전 미게시 workflow 변경은 운영 성공이 아니다. 테스트 47개 통과(새 큐 읽기/누락/레거시 명령 사전 차단 포함).
-- Price/Fundamental 읽기와 보완입력 A:J 전용 게시 코드를 구현했다. 다음은 실제 ADC 운영 검증과 구 장부/복원/Portfolio 출력 제거다. 구 workflow 활성화 금지. 간략 안내는 docs/google-sheets.md 참조.
+- Price/CAN SLIM 읽기와 보완입력 A:J 전용 게시 코드를 구현했다. 다음은 실제 ADC 운영 검증과 구 장부/복원/Portfolio 출력 제거다. 구 workflow 활성화 금지. 간략 안내는 docs/google-sheets.md 참조.
 
 ## 구현됨
 
@@ -62,12 +62,18 @@
 ## 2026-09-23 간략 연구 시트 경로 구현
 
 - 최신 main `abdd3ee`에서 별도 clean worktree로 작업해 이전 작업 폴더의 변경을 건드리지 않았다.
-- `--research-sheets`가 보완입력뿐 아니라 Price_US·Price_KR·Fundamental을 직접 읽고, 설정된 유니버스 행만 `REFERENCE_ONLY_NOT_INDEPENDENTLY_VERIFIED`로 결과에 첨부한다. 이 값은 공급자 계산·ROE·점수를 덮어쓰지 않는다.
-- 읽기 대상은 표시 4개 탭으로 고정했다. Settings와 숨김 계산 탭, 삭제된 거래·보유·주문 탭은 읽지 않는다. 실제 시트의 탭 존재와 헤더를 읽기 전용으로 대조했다.
+- `--research-sheets`가 보완입력과 Price_US·Price_KR을 직접 읽고, 설정된 유니버스 행만 `REFERENCE_ONLY_NOT_INDEPENDENTLY_VERIFIED`로 결과에 첨부한다. 이 값은 공급자 계산·점수를 덮어쓰지 않는다.
+- 읽기 대상은 표시 3개 탭으로 고정했다. Settings와 숨김 계산 탭, 삭제된 Fundamental·거래·보유·주문 탭은 읽지 않는다. 실제 시트의 탭 존재와 헤더를 읽기 전용으로 대조했다.
 - `--publish-research-sheets`는 기존 보완입력 A:J 시스템 열만 갱신한다. K:Q는 쓰기 요청에 포함하지 않으며, ID 없는 비어 있지 않은 행·중복 ID·잘못된 행 위치·용량 초과는 실패 처리한다.
 - 예약 workflow 명령을 새 간략 옵션으로 바꿨지만 job은 계속 무조건 중지 상태다. 실제 ADC 인증·게시 성공 전에는 활성화하지 않는다.
 - 공개 README와 config에 남아 있던 이전 시트 주소/ID를 제거했다. 새 Journal ID는 환경변수로만 주입한다.
 - 단위 테스트 50개 통과. doctor에서 optional 공급자·Google·GPT 패키지/인증 미설정을 확인했다. 실제 ADC 게시와 전체 정기 운영은 아직 미완료다.
+
+## 2026-09-24 Price CAN SLIM 통합 대응
+
+- 사용자가 Fundamental을 삭제하고 Price_US BB:BJ, Price_KR AR:AZ에 C/A/N/S/L/I/M·종합점검·근거/다음확인을 추가했다. 코드가 삭제된 Fundamental을 필수로 요구하던 오류를 제거했다.
+- `--research-sheets`가 두 Price 시트의 가격·Swing 지표와 CAN SLIM 열을 함께 읽는다. ETF의 해당 없음, 미검증, 판단 보류와 L/M 참고값을 그대로 보존하며 자동 계산값으로 승격하지 않는다.
+- 보완입력 A:J 게시와 K:Q 보존 정책, 숨김 Settings 비조회, DRAM ETF-only 정책은 유지한다. GitHub workflow는 실제 ADC 검증 전까지 중지 상태다.
 
 
 ## 최신 사용자 지시 — Sheets 간략화

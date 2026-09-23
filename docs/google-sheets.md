@@ -1,6 +1,6 @@
 # Pepper 간략 시트 사용 안내
 
-사용 화면은 Price_US, Price_KR, Fundamental, 보완입력이다. 가격·펀더멘털 상세 근거는 시트에서 확인하고 시장·뉴스·공시 종합 분석은 ChatGPT가 작성한다.
+사용 화면은 Price_US, Price_KR, 보완입력이다. Fundamental 탭은 사용자 요청으로 삭제했고 CAN SLIM C/A/N/S/L/I/M·종합점검·근거/다음 확인을 두 Price 시트 오른쪽에서 관리한다. 시장·뉴스·공시 종합 분석은 ChatGPT가 작성한다.
 
 보완입력 A:J는 요청 정보, K:Q는 값·출처 URL·자료일·기간 시작/끝·통화·메모다. 날짜는 YYYY-MM-DD로 쓰고 단위·회계 범위를 메모에 기록한다. 입력 후 ChatGPT에 재검토를 요청한다. 입력만으로 ROE나 평가에 자동 반영하지 않는다.
 
@@ -14,7 +14,7 @@
 python -m pepper automate --asof YYYY-MM-DD --research-sheets
 ```
 
-이 경로는 Price_US·Price_KR·Fundamental과 보완입력을 읽는다. 대상 종목은 automation config에서 지정하며, 시트 값은 `REFERENCE_ONLY_NOT_INDEPENDENTLY_VERIFIED`로 별도 보관하고 공급자 계산값을 덮어쓰지 않는다. Settings 등 숨김 탭과 삭제된 장부는 읽지 않는다.
+이 경로는 Price_US·Price_KR의 가격·CAN SLIM 참고값과 보완입력을 읽는다. 대상 종목은 automation config에서 지정하며, 시트 값은 `REFERENCE_ONLY_NOT_INDEPENDENTLY_VERIFIED`로 별도 보관하고 공급자 계산값을 덮어쓰지 않는다. Settings 등 숨김 탭과 삭제된 Fundamental·장부는 읽지 않는다.
 
 자동 수집에서 발견한 미검증 항목을 보완입력에 추가할 때만 다음 옵션을 함께 사용한다.
 
@@ -22,7 +22,7 @@ python -m pepper automate --asof YYYY-MM-DD --research-sheets
 python -m pepper automate --asof YYYY-MM-DD --research-sheets --publish-research-sheets
 ```
 
-게시 범위는 기존 보완입력의 A:J뿐이다. K:Q 수작업 값·출처·날짜·메모는 쓰거나 지우지 않는다. 빈 request_id가 있는 비어 있지 않은 행, 중복 ID·행 위치, 헤더 불일치, 용량 초과는 실패 처리한다. Price_US·Price_KR·Fundamental은 읽기 전용이다.
+게시 범위는 기존 보완입력의 A:J뿐이다. K:Q 수작업 값·출처·날짜·메모는 쓰거나 지우지 않는다. 빈 request_id가 있는 비어 있지 않은 행, 중복 ID·행 위치, 헤더 불일치, 용량 초과는 실패 처리한다. Price_US·Price_KR의 자동 CAN SLIM 갱신은 별도 검증된 작업만 해당 열에 쓴다.
 
 기존 --sheets, --publish-sheets, sync, import-journal, --journal은 CLI에서 차단한다. 서버 ADC는 ChatGPT 연결과 별개다.
 

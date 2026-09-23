@@ -19,9 +19,8 @@ INPUT_HEADERS = ['input_value', 'source_url', 'source_date', 'period_start',
 REQUEST_HEADERS = SYSTEM_HEADERS + INPUT_HEADERS
 MANAGED = ['Review_US', 'Review_KR', 'Review_Other', 'Data_Requests']
 COMPACT_SHEETS = {
-    'Price_US': {'header_row': 1, 'last_column': 'BA'},
-    'Price_KR': {'header_row': 1, 'last_column': 'AQ'},
-    'Fundamental': {'header_row': 7, 'last_column': 'P'},
+    'Price_US': {'header_row': 1, 'last_column': 'BJ'},
+    'Price_KR': {'header_row': 1, 'last_column': 'AZ'},
     '보완입력': {'header_row': 4, 'last_column': 'Q'},
 }
 
@@ -49,7 +48,7 @@ def _rows(values, aliases, required):
 
 
 def read_research_views(spreadsheet_id, session, instruments):
-    """Read only the four compact research screens; never read hidden/key tabs.
+    """Read only Price_US, Price_KR and 보완입력; never hidden/key tabs.
 
     Sheet values are reference evidence and are kept separate from provider metrics.
     """
@@ -62,7 +61,7 @@ def read_research_views(spreadsheet_id, session, instruments):
     if missing:
         raise ValueError('Required compact research sheet missing: ' + ', '.join(missing))
     ranges = []
-    for name in ('Price_US', 'Price_KR', 'Fundamental'):
+    for name in ('Price_US', 'Price_KR'):
         spec = COMPACT_SHEETS[name]
         end = properties[name]['gridProperties']['rowCount']
         ranges.append(f"'{name}'!A{spec['header_row']}:{spec['last_column']}{end}")
@@ -71,7 +70,7 @@ def read_research_views(spreadsheet_id, session, instruments):
         'dateTimeRenderOption': 'FORMATTED_STRING'}, timeout=90)
     response.raise_for_status()
     blocks = response.json().get('valueRanges', [])
-    if len(blocks) != 3:
+    if len(blocks) != 2:
         raise ValueError('Compact research batch response incomplete')
     price_aliases = {
         'asset_class': 'Asset Class', 'sector': 'Sector', 'ticker': 'Ticker',
@@ -79,21 +78,21 @@ def read_research_views(spreadsheet_id, session, instruments):
         'high_52w': '52W High', 'dist_52w_high': 'Dist 52W High', 'rs_1m': 'RS 1M',
         'rs_3m': 'RS 3M', 'rs_6m': 'RS 6M', 'rs_12m': 'RS 12M',
         'volume_ratio': 'Vol Ratio', 'setup_score': 'Setup Score', 'status': 'Status',
-        'rsi14': 'RSI(14)', 'price_state': '현재가 상태', 'atr20_pct': 'ATR 20D % (AV)'}
+        'rsi14': 'RSI(14)', 'price_state': '현재가 상태', 'atr20_pct': 'ATR 20D % (AV)',
+        'can_slim_c': 'C · 분기 EPS', 'can_slim_a': 'A · 연간 EPS',
+        'can_slim_n': 'N · 새로운 변화', 'can_slim_s': 'S · 수요·공급',
+        'can_slim_l': 'L · 주도력 참고', 'can_slim_i': 'I · 기관 후원',
+        'can_slim_m': 'M · 시장 참고', 'can_slim_review': 'CAN SLIM 점검',
+        'can_slim_next': '근거·다음 확인'}
     us = _rows(blocks[0].get('values', []), price_aliases,
-               ('Ticker', '현재가 (GF)', 'MA50', 'MA200', 'Status'))
+               ('Ticker', '현재가 (GF)', 'MA50', 'MA200', 'Status',
+                'C · 분기 EPS', 'A · 연간 EPS', 'N · 새로운 변화', 'S · 수요·공급',
+                'L · 주도력 참고', 'I · 기관 후원', 'M · 시장 참고', 'CAN SLIM 점검'))
     kr_aliases = dict(price_aliases, ticker='Symbol', industry='Industry')
     kr = _rows(blocks[1].get('values', []), kr_aliases,
-               ('Symbol', '현재가 (GF)', 'MA50', 'MA200', 'Status'))
-    fundamental_aliases = {
-        'ticker': 'Ticker', 'name': '종목명', 'roe_ttm': 'ROE (TTM)',
-        'pe_ttm': 'PER (TTM)', 'forward_pe': 'Forward PER', 'pbr': 'PBR',
-        'eps_growth_3y': 'EPS 성장 전망 (향후 3년)', 'peg_3y': 'PEG (3Y 참고)',
-        'profitability': '수익성', 'growth': '성장성', 'valuation_burden': '가격 부담',
-        'overall': '종합 점검', 'source_date': '자료 기준일', 'source_url': '출처 URL',
-        'note': '특이사항', 'analysis_type': '분석 구분'}
-    fundamental = _rows(blocks[2].get('values', []), fundamental_aliases,
-                        ('Ticker', 'ROE (TTM)', 'Forward PER', '자료 기준일', '출처 URL'))
+               ('Symbol', '현재가 (GF)', 'MA50', 'MA200', 'Status',
+                'C · 분기 EPS', 'A · 연간 EPS', 'N · 새로운 변화', 'S · 수요·공급',
+                'L · 주도력 참고', 'I · 기관 후원', 'M · 시장 참고', 'CAN SLIM 점검'))
     wanted = {'US': set(), 'KR': set()}
     for item in instruments.values():
         if item.get('market') in wanted:
@@ -108,10 +107,10 @@ def read_research_views(spreadsheet_id, session, instruments):
                 row = dict(row, ticker=ticker)
                 selected.append(row)
         return selected
-    all_wanted = wanted['US'] | wanted['KR']
     return {'status': 'REFERENCE_ONLY_NOT_INDEPENDENTLY_VERIFIED',
             'Price_US': select(us, 'US'), 'Price_KR': select(kr, 'KR'),
-            'Fundamental': [row for row in fundamental if str(row['ticker']).zfill(6) in all_wanted or str(row['ticker']) in all_wanted]}
+            'Fundamental': [],
+            'fundamental_status': 'REMOVED_BY_USER; CAN_SLIM_REFERENCE_IS_IN_PRICE_SHEETS'}
 
 
 def request_id(market, ticker, field, scope='Current'):

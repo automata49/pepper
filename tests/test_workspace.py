@@ -119,17 +119,16 @@ class WorkspaceTests(unittest.TestCase):
         metadata = Mock(); metadata.json.return_value = {'sheets': [
             {'properties': {'title': 'Price_US', 'gridProperties': {'rowCount': 10}}},
             {'properties': {'title': 'Price_KR', 'gridProperties': {'rowCount': 10}}},
-            {'properties': {'title': 'Fundamental', 'gridProperties': {'rowCount': 10}}},
             {'properties': {'title': '보완입력', 'gridProperties': {'rowCount': 10}}},
             {'properties': {'title': 'Settings', 'gridProperties': {'rowCount': 10}}}]}
+        can = ['C · 분기 EPS','A · 연간 EPS','N · 새로운 변화','S · 수요·공급',
+               'L · 주도력 참고','I · 기관 후원','M · 시장 참고','CAN SLIM 점검','근거·다음 확인']
         batch = Mock(); batch.json.return_value = {'valueRanges': [
-            {'values': [['Asset Class','Sector','Ticker','Name','현재가\n(GF)','MA50','MA200','52W High','Dist 52W High','RS 1M','RS 3M','RS 6M','RS 12M','Vol Ratio','Setup Score','Status','RSI(14)','현재가 상태','ATR 20D %\n(AV)'],
-                        ['Stock','Tech','NVDA','NVIDIA',100,90,80,110,-.1,.1,.2,.3,.4,1.2,80,'WATCH',60,'LIVE',.04],
-                        ['Stock','Tech','OTHER','Other',1,1,1,1,0,0,0,0,0,1,1,'WATCH',50,'LIVE',.02]]},
-            {'values': [['Asset Class','Sector','Industry','Symbol','Name','현재가\n(GF)','MA50','MA200','52W High','Dist 52W High','RS 1M','RS 3M','RS 6M','RS 12M','Vol Ratio','Setup Score','Status','RSI(14)','현재가 상태','ATR 20D %\n(AV)'],
-                        ['Stock','Tech','Memory','660','SK hynix',10,9,8,11,-.1,.1,.2,.3,.4,1,70,'WATCH',55,'LIVE',.05]]},
-            {'values': [['Ticker','종목명','ROE (TTM)','PER (TTM)','Forward PER','PBR','EPS 성장 전망\n(향후 3년)','PEG (3Y 참고)','수익성','성장성','가격 부담','종합 점검','자료 기준일','출처 URL','특이사항','분석 구분'],
-                        ['NVDA','NVIDIA',1.0,20,15,10,.5,.3,'양호','성장','점검','검토','2026-09-01','https://example.com','','일반']]}
+            {'values': [['Asset Class','Sector','Ticker','Name','현재가\n(GF)','MA50','MA200','52W High','Dist 52W High','RS 1M','RS 3M','RS 6M','RS 12M','Vol Ratio','Setup Score','Status','RSI(14)','현재가 상태','ATR 20D %\n(AV)',*can],
+                        ['Stock','Tech','NVDA','NVIDIA',100,90,80,110,-.1,.1,.2,.3,.4,1.2,80,'WATCH',60,'LIVE',.04,'충족','충족','미검증','미검증','참고: 상대강세','미검증','참고: 상승추세','판단 보류','다음 실적'],
+                        ['Stock','Tech','OTHER','Other',1,1,1,1,0,0,0,0,0,1,1,'WATCH',50,'LIVE',.02,*(['미검증']*9)]]},
+            {'values': [['Asset Class','Sector','Industry','Symbol','Name','현재가\n(GF)','MA50','MA200','52W High','Dist 52W High','RS 1M','RS 3M','RS 6M','RS 12M','Vol Ratio','Setup Score','Status','RSI(14)','현재가 상태','ATR 20D %\n(AV)',*can],
+                        ['Stock','Tech','Memory','660','SK hynix',10,9,8,11,-.1,.1,.2,.3,.4,1,70,'WATCH',55,'LIVE',.05,'충족','충족','미검증','미검증','참고: 상대강세','미검증','참고: 상승추세','판단 보류','다음 실적']]}
         ]}
         session = Mock(); session.get.side_effect = [metadata, batch]
         instruments = {
@@ -138,9 +137,12 @@ class WorkspaceTests(unittest.TestCase):
         result = read_research_views('private', session, instruments)
         self.assertEqual([r['ticker'] for r in result['Price_US']], ['NVDA'])
         self.assertEqual([r['ticker'] for r in result['Price_KR']], ['000660'])
-        self.assertEqual(len(result['Fundamental']), 1)
+        self.assertEqual(result['Price_US'][0]['can_slim_c'], '충족')
+        self.assertEqual(result['Price_KR'][0]['can_slim_review'], '판단 보류')
+        self.assertEqual(result['Fundamental'], [])
         params = session.get.call_args.kwargs['params']
         self.assertFalse(any('Settings' in r for r in params['ranges']))
+        self.assertFalse(any('Fundamental' in r for r in params['ranges']))
 
     def test_compact_publisher_only_writes_a_to_j(self):
         old = build_workspace(result())['requests']
