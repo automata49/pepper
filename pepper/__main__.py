@@ -22,6 +22,7 @@ def main():
     p.add_argument('--drive-folder', help='Explicit private Drive folder ID for durable backup')
     p.add_argument('--sheets', action='store_true', help='Read manual inputs and journal tabs from connected workspace')
     p.add_argument('--research-sheets', action='store_true', help='Read the compact workbook supplement queue without legacy journals')
+    p.add_argument('--publish-research-sheets', action='store_true', help='Write only system columns A:J in the compact supplement queue')
     p.add_argument('--publish-sheets', action='store_true', help='Write dedicated Review_* and Data_Requests tabs; preserves manual input columns')
     args = p.parse_args()
     if args.sheets or args.publish_sheets or args.command in ('sync', 'import-journal') or args.journal:
@@ -30,6 +31,8 @@ def main():
         p.error('--research-sheets requires automate without a legacy snapshot')
     if args.research_sheets and not os.getenv('PEPPER_RESEARCH_SHEET_ID'):
         p.error('Set PEPPER_RESEARCH_SHEET_ID privately; do not publish the workbook ID')
+    if args.publish_research_sheets and not args.research_sheets:
+        p.error('--publish-research-sheets requires --research-sheets')
     if args.publish_sheets and args.command != 'automate':
         p.error('--publish-sheets is only supported with automate')
     if args.command == 'doctor':
@@ -57,11 +60,17 @@ def main():
         if manual and manual['asof']!=asof:p.error('Manual snapshot asof must match automated run')
         result=run(config,asof,journal,manual)
         if args.research_sheets:
-            from .workspace import read_requests,session_for_workspace,attach_supplements
+            from .workspace import (read_requests, read_research_views, session_for_workspace,
+                                    attach_supplements)
             sid=os.environ['PEPPER_RESEARCH_SHEET_ID']
-            _,requests=read_requests(sid,session_for_workspace(),queue_name='보완입력')
+            session=session_for_workspace()
+            _,requests=read_requests(sid,session,queue_name='보완입력')
             result['data_requests']=requests
             attach_supplements(result,requests)
+            result['research_sheet_reference']=read_research_views(sid,session,result['instruments'])
+            if args.publish_research_sheets:
+                from .workspace import publish_research_requests
+                publish_research_requests(sid,result)
         if args.drive_folder:
             from .operations import restore_drive
             restore_drive(args.drive_folder)

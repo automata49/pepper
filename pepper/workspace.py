@@ -18,6 +18,100 @@ INPUT_HEADERS = ['input_value', 'source_url', 'source_date', 'period_start',
                  'period_end', 'currency', 'review_note']
 REQUEST_HEADERS = SYSTEM_HEADERS + INPUT_HEADERS
 MANAGED = ['Review_US', 'Review_KR', 'Review_Other', 'Data_Requests']
+COMPACT_SHEETS = {
+    'Price_US': {'header_row': 1, 'last_column': 'BA'},
+    'Price_KR': {'header_row': 1, 'last_column': 'AQ'},
+    'Fundamental': {'header_row': 7, 'last_column': 'P'},
+    '보완입력': {'header_row': 4, 'last_column': 'Q'},
+}
+
+
+def _header(value):
+    return ' '.join(str(value or '').split())
+
+
+def _rows(values, aliases, required):
+    if not values:
+        raise ValueError('Research sheet is empty')
+    indexes = {_header(value): index for index, value in enumerate(values[0]) if _header(value)}
+    missing = [name for name in required if name not in indexes]
+    if missing:
+        raise ValueError('Research sheet header mismatch: ' + ', '.join(missing))
+    output = []
+    for row in values[1:]:
+        if not row:
+            continue
+        item = {target: (row[indexes[source]] if source in indexes and indexes[source] < len(row) else None)
+                for target, source in aliases.items()}
+        if item.get('ticker') not in (None, ''):
+            output.append(item)
+    return output
+
+
+def read_research_views(spreadsheet_id, session, instruments):
+    """Read only the four compact research screens; never read hidden/key tabs.
+
+    Sheet values are reference evidence and are kept separate from provider metrics.
+    """
+    base = f'https://sheets.googleapis.com/v4/spreadsheets/{quote(spreadsheet_id, safe="")}'
+    meta = session.get(base, params={'fields': 'sheets(properties)'}, timeout=60)
+    meta.raise_for_status()
+    metadata = meta.json()
+    properties = {s['properties']['title']: s['properties'] for s in metadata.get('sheets', [])}
+    missing = [name for name in COMPACT_SHEETS if name not in properties]
+    if missing:
+        raise ValueError('Required compact research sheet missing: ' + ', '.join(missing))
+    ranges = []
+    for name in ('Price_US', 'Price_KR', 'Fundamental'):
+        spec = COMPACT_SHEETS[name]
+        end = properties[name]['gridProperties']['rowCount']
+        ranges.append(f"'{name}'!A{spec['header_row']}:{spec['last_column']}{end}")
+    response = session.get(base + '/values:batchGet', params={
+        'ranges': ranges, 'valueRenderOption': 'UNFORMATTED_VALUE',
+        'dateTimeRenderOption': 'FORMATTED_STRING'}, timeout=90)
+    response.raise_for_status()
+    blocks = response.json().get('valueRanges', [])
+    if len(blocks) != 3:
+        raise ValueError('Compact research batch response incomplete')
+    price_aliases = {
+        'asset_class': 'Asset Class', 'sector': 'Sector', 'ticker': 'Ticker',
+        'name': 'Name', 'price': '현재가 (GF)', 'ma50': 'MA50', 'ma200': 'MA200',
+        'high_52w': '52W High', 'dist_52w_high': 'Dist 52W High', 'rs_1m': 'RS 1M',
+        'rs_3m': 'RS 3M', 'rs_6m': 'RS 6M', 'rs_12m': 'RS 12M',
+        'volume_ratio': 'Vol Ratio', 'setup_score': 'Setup Score', 'status': 'Status',
+        'rsi14': 'RSI(14)', 'price_state': '현재가 상태', 'atr20_pct': 'ATR 20D % (AV)'}
+    us = _rows(blocks[0].get('values', []), price_aliases,
+               ('Ticker', '현재가 (GF)', 'MA50', 'MA200', 'Status'))
+    kr_aliases = dict(price_aliases, ticker='Symbol', industry='Industry')
+    kr = _rows(blocks[1].get('values', []), kr_aliases,
+               ('Symbol', '현재가 (GF)', 'MA50', 'MA200', 'Status'))
+    fundamental_aliases = {
+        'ticker': 'Ticker', 'name': '종목명', 'roe_ttm': 'ROE (TTM)',
+        'pe_ttm': 'PER (TTM)', 'forward_pe': 'Forward PER', 'pbr': 'PBR',
+        'eps_growth_3y': 'EPS 성장 전망 (향후 3년)', 'peg_3y': 'PEG (3Y 참고)',
+        'profitability': '수익성', 'growth': '성장성', 'valuation_burden': '가격 부담',
+        'overall': '종합 점검', 'source_date': '자료 기준일', 'source_url': '출처 URL',
+        'note': '특이사항', 'analysis_type': '분석 구분'}
+    fundamental = _rows(blocks[2].get('values', []), fundamental_aliases,
+                        ('Ticker', 'ROE (TTM)', 'Forward PER', '자료 기준일', '출처 URL'))
+    wanted = {'US': set(), 'KR': set()}
+    for item in instruments.values():
+        if item.get('market') in wanted:
+            wanted[item['market']].add(str(item.get('ticker', '')))
+    def select(rows, market):
+        selected = []
+        for row in rows:
+            ticker = str(row['ticker'])
+            if market == 'KR':
+                ticker = ticker.zfill(6)
+            if ticker in wanted[market]:
+                row = dict(row, ticker=ticker)
+                selected.append(row)
+        return selected
+    all_wanted = wanted['US'] | wanted['KR']
+    return {'status': 'REFERENCE_ONLY_NOT_INDEPENDENTLY_VERIFIED',
+            'Price_US': select(us, 'US'), 'Price_KR': select(kr, 'KR'),
+            'Fundamental': [row for row in fundamental if str(row['ticker']).zfill(6) in all_wanted or str(row['ticker']) in all_wanted]}
 
 
 def request_id(market, ticker, field, scope='Current'):
@@ -124,8 +218,8 @@ def parse_request_values(values):
         return []
     if values[0] != REQUEST_HEADERS:
         raise ValueError('Data_Requests header mismatch')
-    if any(row and not row[0] and any(x not in (None, '') for x in row[10:]) for row in values[1:]):
-        raise ValueError('Manual input without request_id; restore row identity before publishing')
+    if any(row and not row[0] and any(x not in (None, '') for x in row) for row in values[1:]):
+        raise ValueError('Queue row without request_id; restore row identity before publishing')
     parsed = [dict(zip(REQUEST_HEADERS, row + [None]*len(REQUEST_HEADERS)))
               for row in values[1:] if row and row[0]]
     if len({row['request_id'] for row in parsed}) != len(parsed):
@@ -236,6 +330,37 @@ def read_requests(spreadsheet_id, session, queue_name='Data_Requests'):
     return metadata, parsed
 
 
+def publish_research_request_cells(metadata, workspace, previous):
+    """Build updates for existing 보완입력 A:J only; K:Q is user-owned."""
+    by_name = {s['properties']['title']: s['properties'] for s in metadata.get('sheets', [])}
+    if '보완입력' not in by_name:
+        raise ValueError('Required research input sheet missing')
+    props = by_name['보완입력']
+    if props['gridProperties'].get('columnCount', 0) < len(REQUEST_HEADERS):
+        raise ValueError('보완입력 requires columns A:Q')
+    positions = {row['request_id']: row.get('_sheet_row') for row in previous}
+    if len(positions) != len(previous) or len(set(positions.values())) != len(positions):
+        raise ValueError('Duplicate request identity or row position')
+    if any(type(pos) is not int or pos < 4 for pos in positions.values()):
+        raise ValueError('Invalid request row position; refusing header overwrite')
+    next_row = max(positions.values(), default=3) + 1
+    requests = []
+    for row in workspace['requests']:
+        key = row['request_id']
+        if key not in positions:
+            positions[key] = next_row
+            next_row += 1
+        target = positions[key]
+        if target >= props['gridProperties']['rowCount']:
+            raise ValueError('보완입력 capacity exceeded')
+        values = [{'userEnteredValue': {'stringValue': str(row.get(name) or '')}}
+                  for name in SYSTEM_HEADERS]
+        requests.append({'updateCells': {
+            'start': {'sheetId': props['sheetId'], 'rowIndex': target, 'columnIndex': 0},
+            'rows': [{'values': values}], 'fields': 'userEnteredValue'}})
+    return requests
+
+
 def session_for_workspace(write=False):
     import google.auth
     from google.auth.transport.requests import AuthorizedSession
@@ -251,4 +376,17 @@ def publish(spreadsheet_id, result):
     requests = publish_requests(metadata, workspace, previous)
     response = session.post(f'https://sheets.googleapis.com/v4/spreadsheets/{quote(spreadsheet_id, safe="")}:batchUpdate', json={'requests': requests}, timeout=90)
     response.raise_for_status()
+    return workspace
+
+
+def publish_research_requests(spreadsheet_id, result):
+    session = session_for_workspace(write=True)
+    metadata, previous = read_requests(spreadsheet_id, session, queue_name='보완입력')
+    workspace = build_workspace(result, previous)
+    requests = publish_research_request_cells(metadata, workspace, previous)
+    if requests:
+        response = session.post(
+            f'https://sheets.googleapis.com/v4/spreadsheets/{quote(spreadsheet_id, safe="")}:batchUpdate',
+            json={'requests': requests}, timeout=90)
+        response.raise_for_status()
     return workspace

@@ -14,6 +14,16 @@
 python -m pepper automate --asof YYYY-MM-DD --research-sheets
 ```
 
-이 경로는 보완입력만 읽어 보고서에 독립 검증 전 근거로 첨부한다. 대상 종목은 automation config에서 지정한다. Price/Fundamental 직접 읽기 및 새 스키마 게시 경로는 전환 중이다. 기존 --sheets, --publish-sheets, sync, import-journal, --journal은 CLI에서 차단한다. 서버 ADC는 ChatGPT 연결과 별개다.
+이 경로는 Price_US·Price_KR·Fundamental과 보완입력을 읽는다. 대상 종목은 automation config에서 지정하며, 시트 값은 `REFERENCE_ONLY_NOT_INDEPENDENTLY_VERIFIED`로 별도 보관하고 공급자 계산값을 덮어쓰지 않는다. Settings 등 숨김 탭과 삭제된 장부는 읽지 않는다.
+
+자동 수집에서 발견한 미검증 항목을 보완입력에 추가할 때만 다음 옵션을 함께 사용한다.
+
+```sh
+python -m pepper automate --asof YYYY-MM-DD --research-sheets --publish-research-sheets
+```
+
+게시 범위는 기존 보완입력의 A:J뿐이다. K:Q 수작업 값·출처·날짜·메모는 쓰거나 지우지 않는다. 빈 request_id가 있는 비어 있지 않은 행, 중복 ID·행 위치, 헤더 불일치, 용량 초과는 실패 처리한다. Price_US·Price_KR·Fundamental은 읽기 전용이다.
+
+기존 --sheets, --publish-sheets, sync, import-journal, --journal은 CLI에서 차단한다. 서버 ADC는 ChatGPT 연결과 별개다.
 
 GitHub 정기 실행은 간략 스키마 검증 전까지 중지한다. 전체 자동화 완료를 의미하지 않는다. 최신 상태는 BUILD_STATUS.md를 확인한다.

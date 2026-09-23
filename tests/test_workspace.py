@@ -1,6 +1,8 @@
 import unittest
 from copy import deepcopy
-from pepper.workspace import build_workspace, attach_supplements, publish_requests, parse_request_values, read_requests, REQUEST_HEADERS
+from pepper.workspace import (build_workspace, attach_supplements, publish_requests,
+    publish_research_request_cells, parse_request_values, read_requests,
+    read_research_views, REQUEST_HEADERS)
 from unittest.mock import Mock
 
 
@@ -78,6 +80,8 @@ class WorkspaceTests(unittest.TestCase):
         self.assertEqual(parse_request_values([REQUEST_HEADERS]), [])
         with self.assertRaises(ValueError):
             parse_request_values([REQUEST_HEADERS, ['']*10+['orphaned input']])
+        with self.assertRaises(ValueError):
+            parse_request_values([REQUEST_HEADERS, ['']+['orphaned system value']])
 
     def test_out_of_scope_retains_input(self):
         old = build_workspace(result())['requests']; old[0]['input_value'] = 'keep'
@@ -110,6 +114,45 @@ class WorkspaceTests(unittest.TestCase):
         self.assertTrue(session.get.call_args.args[0].endswith('A4:Q3000'))
         self.assertEqual(rows[0]['_sheet_row'], 2004)
         self.assertEqual(rows[0]['input_value'], 'keep')
+
+    def test_compact_reader_selects_targets_without_hidden_tabs(self):
+        metadata = Mock(); metadata.json.return_value = {'sheets': [
+            {'properties': {'title': 'Price_US', 'gridProperties': {'rowCount': 10}}},
+            {'properties': {'title': 'Price_KR', 'gridProperties': {'rowCount': 10}}},
+            {'properties': {'title': 'Fundamental', 'gridProperties': {'rowCount': 10}}},
+            {'properties': {'title': '보완입력', 'gridProperties': {'rowCount': 10}}},
+            {'properties': {'title': 'Settings', 'gridProperties': {'rowCount': 10}}}]}
+        batch = Mock(); batch.json.return_value = {'valueRanges': [
+            {'values': [['Asset Class','Sector','Ticker','Name','현재가\n(GF)','MA50','MA200','52W High','Dist 52W High','RS 1M','RS 3M','RS 6M','RS 12M','Vol Ratio','Setup Score','Status','RSI(14)','현재가 상태','ATR 20D %\n(AV)'],
+                        ['Stock','Tech','NVDA','NVIDIA',100,90,80,110,-.1,.1,.2,.3,.4,1.2,80,'WATCH',60,'LIVE',.04],
+                        ['Stock','Tech','OTHER','Other',1,1,1,1,0,0,0,0,0,1,1,'WATCH',50,'LIVE',.02]]},
+            {'values': [['Asset Class','Sector','Industry','Symbol','Name','현재가\n(GF)','MA50','MA200','52W High','Dist 52W High','RS 1M','RS 3M','RS 6M','RS 12M','Vol Ratio','Setup Score','Status','RSI(14)','현재가 상태','ATR 20D %\n(AV)'],
+                        ['Stock','Tech','Memory','660','SK hynix',10,9,8,11,-.1,.1,.2,.3,.4,1,70,'WATCH',55,'LIVE',.05]]},
+            {'values': [['Ticker','종목명','ROE (TTM)','PER (TTM)','Forward PER','PBR','EPS 성장 전망\n(향후 3년)','PEG (3Y 참고)','수익성','성장성','가격 부담','종합 점검','자료 기준일','출처 URL','특이사항','분석 구분'],
+                        ['NVDA','NVIDIA',1.0,20,15,10,.5,.3,'양호','성장','점검','검토','2026-09-01','https://example.com','','일반']]}
+        ]}
+        session = Mock(); session.get.side_effect = [metadata, batch]
+        instruments = {
+            'US:NVDA': {'market':'US','ticker':'NVDA'},
+            'KR:000660': {'market':'KR','ticker':'000660'}}
+        result = read_research_views('private', session, instruments)
+        self.assertEqual([r['ticker'] for r in result['Price_US']], ['NVDA'])
+        self.assertEqual([r['ticker'] for r in result['Price_KR']], ['000660'])
+        self.assertEqual(len(result['Fundamental']), 1)
+        params = session.get.call_args.kwargs['params']
+        self.assertFalse(any('Settings' in r for r in params['ranges']))
+
+    def test_compact_publisher_only_writes_a_to_j(self):
+        old = build_workspace(result())['requests']
+        for i, row in enumerate(old): row['_sheet_row'] = i + 12
+        meta = {'sheets': [{'properties': {'title':'보완입력','sheetId':209,
+                'gridProperties': {'rowCount':2000,'columnCount':17}}}]}
+        requests = publish_research_request_cells(meta, build_workspace(result(), old), old)
+        self.assertTrue(requests)
+        for request in requests:
+            update = request['updateCells']
+            self.assertEqual(update['start']['columnIndex'], 0)
+            self.assertEqual(len(update['rows'][0]['values']), 10)
 
 
 if __name__ == '__main__': unittest.main()

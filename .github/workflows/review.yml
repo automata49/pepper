@@ -43,5 +43,5 @@ jobs:
           with open(os.environ['GITHUB_ENV'],'a') as f:f.write('GOOGLE_APPLICATION_CREDENTIALS='+str(p)+'\n')
           PY
       - name: Collect and archive private reports
-        run: python -m pepper automate --automation-config config/automation.json --sheets --publish-sheets --llm --drive-folder "$PEPPER_DRIVE_FOLDER"
+        run: python -m pepper automate --automation-config config/automation.json --research-sheets --publish-research-sheets --llm --drive-folder "$PEPPER_DRIVE_FOLDER"
       # No public artifacts, no portfolio data committed, no credential output.

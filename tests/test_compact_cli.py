@@ -12,3 +12,9 @@ class CompactCliTests(unittest.TestCase):
                                         capture_output=True, text=True)
                 self.assertEqual(result.returncode, 2)
                 self.assertIn('Legacy journal integration retired', result.stderr)
+
+    def test_compact_publish_requires_compact_read(self):
+        result = subprocess.run([sys.executable, '-m', 'pepper', 'automate',
+                                 '--publish-research-sheets'], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn('requires --research-sheets', result.stderr)
