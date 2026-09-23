@@ -96,3 +96,11 @@
 - 예약 workflow가 코드만 실행하고 연결 Workspace를 읽거나 Review/Data_Requests를 게시하지 않던 누락을 수정했다. 배포 게이트가 열린 실행은 `--sheets --publish-sheets --llm`으로 지정 장부를 읽고, 전용 자동 탭 게시와 GPT 종합 리포트를 함께 수행한다.
 - 배포 전 검증에 OPENAI_API_KEY/OPENAI_MODEL을 포함했다. 원문 Google credential JSON은 준비 step에만 노출하고 이후 step에는 파일 경로만 전달한다.
 - workflow 회귀 테스트 2개 추가, 총 44개 통과. 실제 동작은 PEPPER_AUTOMATION_ENABLED와 기존 비밀값/ADC가 설정된 뒤의 성공 실행으로만 검증 완료 처리한다. 이번 실행에서 사용자 시트는 수정하지 않았다.
+
+## 2026-09-23 4대가 규칙 엔진 추가 (feature/master-rules)
+
+- `pepper/rules/*.yaml`(Minervini·Buffett·Fisher·Lynch·custom·exceptions)과 `pepper/metrics`, `pepper/scoring`, `pepper/bridge.py` 추가. 기준값은 YAML에만 있고 버전이 results에 기록된다.
+- CLI: `score`, `rules-show`, `rules-diff`. Edgar와는 inputs/results JSON으로만 연결한다.
+- EPS 3년 성장 전망은 정의 미확인이라 기본 누적→CAGR 변환(보수적). 시트 PEG(0.04)는 연평균 가정과 일치함을 테스트로 확인.
+- 정성 항목(해자·경영진 등)은 LLM 초안이면 UNVERIFIED로 점수 제외. 사용자가 확인(verified=true)해야 반영.
+- 테스트 62개 통과(기존 42 + 신규 20). 실제 종목 데이터·Edgar 수집 연결은 미검증.

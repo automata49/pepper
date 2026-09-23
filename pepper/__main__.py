@@ -10,7 +10,7 @@ from .sheets import fetch
 
 def main():
     p = argparse.ArgumentParser(description='Read manual Sheets inputs and generate investment reviews')
-    p.add_argument('command', choices=['sync', 'review', 'import-journal', 'automate', 'doctor'])
+    p.add_argument('command', choices=['sync', 'review', 'import-journal', 'automate', 'doctor', 'score', 'rules-diff', 'rules-show'])
     p.add_argument('--config', default='config/workspace.json')
     p.add_argument('--snapshot', help='Offline input snapshot (required for review)')
     p.add_argument('--output', default='reports')
@@ -24,7 +24,15 @@ def main():
     p.add_argument('--research-sheets', action='store_true', help='Read the compact workbook supplement queue without legacy journals')
     p.add_argument('--publish-research-sheets', action='store_true', help='Write only system columns A:J in the compact supplement queue')
     p.add_argument('--publish-sheets', action='store_true', help='Write dedicated Review_* and Data_Requests tabs; preserves manual input columns')
+    p.add_argument('--input', help='score/rules-diff: Edgar inputs JSON')
+    p.add_argument('--result', default='data/results/latest.json', help='score: results JSON 저장 경로')
+    p.add_argument('--rules', help='규칙 폴더 (기본: pepper/rules)')
+    p.add_argument('--old-rules', help='rules-diff: 비교할 이전 규칙 폴더')
+    p.add_argument('--rules-override', help='개인 기준값 덮어쓰기 YAML (공개 저장소에 올리지 않음)')
     args = p.parse_args()
+    if args.command in ('score', 'rules-diff', 'rules-show'):
+        from .scoring_cli import run as scoring_run
+        p.exit(scoring_run(args, p))
     if args.sheets or args.publish_sheets or args.command in ('sync', 'import-journal') or args.journal:
         p.error('Legacy journal integration retired. Use --research-sheets for the compact research workbook.')
     if args.research_sheets and (args.command != 'automate' or args.snapshot):

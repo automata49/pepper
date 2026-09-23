@@ -1,0 +1,124 @@
+# Mark Minervini — 추세·타이밍 (Swing)
+# 근거: Trend Template(8개 조건), VCP, 피벗 기준 매수 범위, 손실 제한.
+# 숫자를 바꾸면 version을 올리고 CHANGELOG.md에 이유를 적으세요.
+profile: minervini
+title: Mark Minervini — Trend Template · VCP
+version: 2026.09.1
+strategy: swing
+min_coverage: 0.7          # 가중치 기준 데이터가 70% 미만이면 판정 보류
+
+criteria:
+  # ── Trend Template (group: template) ─────────────────────────
+  - id: price_above_ma150_ma200
+    label: 주가 > MA150·MA200
+    metric: price_above_ma150_ma200
+    rule: "value"
+    weight: 1
+    group: template
+  - id: ma150_above_ma200
+    label: MA150 > MA200
+    metric: ma150_above_ma200
+    rule: "value"
+    weight: 1
+    group: template
+  - id: ma200_rising
+    label: MA200 상승 (1개월 이상)
+    metric: ma200_change
+    params: {lookback_bars: 22}
+    rule: "value > 0"
+    weight: 1
+    group: template
+  - id: ma50_above_ma150_ma200
+    label: MA50 > MA150·MA200
+    metric: ma50_above_ma150_ma200
+    rule: "value"
+    weight: 1
+    group: template
+  - id: price_above_ma50
+    label: 주가 > MA50
+    metric: price_above_ma50
+    rule: "value"
+    weight: 1
+    group: template
+  - id: above_52w_low
+    label: 52주 저점 대비 +30% 이상
+    metric: pct_above_52w_low
+    rule: "value >= 0.30"
+    weight: 1
+    group: template
+  - id: near_52w_high
+    label: 52주 고점 대비 25% 이내
+    metric: pct_from_52w_high
+    rule: "value >= -0.25"
+    weight: 1
+    group: template
+  - id: rs_rank
+    label: RS 백분위 70 이상 (권장 80+)
+    metric: rs_composite_percentile
+    params: {weights: {rs_3m: 0.4, rs_6m: 0.2, rs_12m: 0.4}}
+    bands:
+      - {min: 80, score: 100, label: 강함}
+      - {min: 70, score: 70, label: 통과}
+      - {score: 0, label: 미달}
+    weight: 1
+    group: template
+
+  # ── 실적 (group: earnings) ───────────────────────────────────
+  - id: quarter_eps_growth
+    label: 최근 분기 EPS 전년비 +25% 이상
+    metric: quarter_eps_yoy
+    bands:
+      - {min: 0.25, score: 100, label: 통과}
+      - {min: 0.15, score: 50, label: 보통}
+      - {score: 0, label: 미달}
+    weight: 1
+    group: earnings
+    skip_if: [negative_eps]
+  - id: eps_acceleration
+    label: 분기 EPS 성장 가속
+    metric: eps_acceleration
+    rule: "value > 0"
+    weight: 0.5
+    group: earnings
+    skip_if: [negative_eps]
+  - id: quarter_sales_growth
+    label: 최근 분기 매출 전년비 +20% 이상
+    metric: quarter_sales_yoy
+    rule: "value >= 0.20"
+    weight: 0.5
+    group: earnings
+
+  # ── 패턴 (group: setup) ──────────────────────────────────────
+  - id: vcp
+    label: VCP (조정폭 연속 축소 + 거래량 감소)
+    metric: vcp_contracting
+    params: {windows: 3, window_bars: 20}
+    rule: "value"
+    weight: 1
+    group: setup
+
+# 점수에는 들어가지 않고 Status 판정에만 쓰는 값
+context_metrics:
+  pivot_distance: {metric: pivot_distance, params: {window_bars: 20}}
+  price_below_ma200: {metric: price_below_ma200}
+
+params:
+  buy_range_min: 0.0       # 피벗 돌파 지점
+  buy_range_max: 0.05      # 피벗 +5%까지 매수 가능 범위
+  stop_loss_pct: 0.08      # 권장 손절폭
+  stop_loss_max_pct: 0.10  # 절대 상한
+
+# 위에서부터 처음 참이 되는 줄의 Status를 씁니다.
+status_rules:
+  - {when: "missing_template > 0", status: DATA_REQUIRED}
+  - {when: "price_below_ma200", status: AVOID}
+  - {when: "passed_template == total_template and pivot_distance > buy_range_max", status: EXTENDED}
+  - {when: "passed_template == total_template and pivot_distance >= buy_range_min", status: ACTIONABLE}
+  - {when: "passed_template == total_template", status: SETUP}
+  - {when: "passed_template >= 6", status: WATCH}
+  - {when: "True", status: AVOID}
+
+verdict:
+  - {min: 80, label: 주도주 후보}
+  - {min: 60, label: 관찰}
+  - {label: 부적합}

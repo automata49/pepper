@@ -7,7 +7,7 @@ name = "pepper-review"
 version = "0.1.0"
 description = "Manual Google Sheets investment research and portfolio reviews"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["PyYAML>=6,<7"]
 
 [project.optional-dependencies]
 google = ["google-auth>=2.30,<3", "requests>=2.32,<3"]
@@ -17,7 +17,7 @@ automation = ["google-auth>=2.30,<3", "requests>=2.32,<3", "finance-datareader>=
 pepper = "pepper.__main__:main"
 
 [tool.setuptools.package-data]
-pepper = ["schema.json"]
+pepper = ["schema.json", "rules/*.yaml", "rules/*.md"]
 
 [tool.setuptools.packages.find]
 include = ["pepper*"]
