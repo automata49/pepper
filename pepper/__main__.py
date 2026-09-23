@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 from datetime import datetime, timezone, date
 from pathlib import Path
 from .engine import evaluate
@@ -20,8 +21,15 @@ def main():
     p.add_argument('--llm', action='store_true', help='Send validated report to configured OpenAI model')
     p.add_argument('--drive-folder', help='Explicit private Drive folder ID for durable backup')
     p.add_argument('--sheets', action='store_true', help='Read manual inputs and journal tabs from connected workspace')
+    p.add_argument('--research-sheets', action='store_true', help='Read the compact workbook supplement queue without legacy journals')
     p.add_argument('--publish-sheets', action='store_true', help='Write dedicated Review_* and Data_Requests tabs; preserves manual input columns')
     args = p.parse_args()
+    if args.sheets or args.publish_sheets or args.command in ('sync', 'import-journal') or args.journal:
+        p.error('Legacy journal integration retired. Use --research-sheets for the compact research workbook.')
+    if args.research_sheets and (args.command != 'automate' or args.snapshot):
+        p.error('--research-sheets requires automate without a legacy snapshot')
+    if args.research_sheets and not os.getenv('PEPPER_RESEARCH_SHEET_ID'):
+        p.error('Set PEPPER_RESEARCH_SHEET_ID privately; do not publish the workbook ID')
     if args.publish_sheets and args.command != 'automate':
         p.error('--publish-sheets is only supported with automate')
     if args.command == 'doctor':
@@ -48,10 +56,10 @@ def main():
         asof=args.asof or (date.today()-timedelta(days=1)).isoformat()
         if manual and manual['asof']!=asof:p.error('Manual snapshot asof must match automated run')
         result=run(config,asof,journal,manual)
-        if args.sheets or args.publish_sheets:
+        if args.research_sheets:
             from .workspace import read_requests,session_for_workspace,attach_supplements
-            sid=json.loads(Path(args.config).read_text())['spreadsheet_id']
-            _,requests=read_requests(sid,session_for_workspace())
+            sid=os.environ['PEPPER_RESEARCH_SHEET_ID']
+            _,requests=read_requests(sid,session_for_workspace(),queue_name='보완입력')
             result['data_requests']=requests
             attach_supplements(result,requests)
         if args.drive_folder:

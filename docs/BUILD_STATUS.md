@@ -1,5 +1,13 @@
 # Pepper 구현·재개 상태
 
+## 최우선 현재 범위 — 2026-09-23
+
+- 아래 Portfolio/Trades/Orders 기록은 과거 이력이다. 현재 범위는 Price_US/Price_KR/Fundamental/보완입력과 ChatGPT 분석이다. 삭제된 장부/주문/복기 탭과 데이터는 재생성하지 않는다.
+- 이전 실행에서 Journal 17개 탭과 구 Workspace 장부/대시보드 6개 탭을 삭제하고 보완입력을 Journal로 복사했다. 가격 의존 계산 탭 6개는 숨김 보존, 거래 참조 439개 셀은 비웠다. 이번에는 추가 시트 변경 없음.
+- 레거시 CLI 장부/게시 경로 차단. --research-sheets는 비공개 PEPPER_RESEARCH_SHEET_ID의 보완입력만 읽고, 지정 탭 누락은 실패 처리한다. 기존 Review/장부는 조회하지 않는다.
+- GitHub workflow는 무조건 중지로 변경. 이전 미게시 workflow 변경은 운영 성공이 아니다. 테스트 47개 통과(새 큐 읽기/누락/레거시 명령 사전 차단 포함).
+- 다음: Price/Fundamental 읽기, 보완입력 A:J 전용 게시, 구 장부/복원/Portfolio 출력 제거. 실제 ADC 운영은 검증 전이며 구 workflow 활성화 금지. 간략 안내는 docs/google-sheets.md 참조.
+
 ## 구현됨
 
 - 수작업 Sheets 입력·재무/포트폴리오 계산·Daily/Weekly/Portfolio 보고서.
@@ -72,3 +80,9 @@
 - 연결된 Pepper Workspace의 지정 5개 장부 탭과 Data_Requests를 헤더 행만 읽어 코드 스키마와 일치함을 확인했다. 실제 포트폴리오/체결 행은 조회·출력·저장하지 않았고 원본 및 Price 탭도 수정하지 않았다.
 - 주문 계획 ID가 누락/중복이면 모든 주문 점검을 차단하고 현금·위험 예약값을 만들지 않는다. 거래 장부에 날짜·중복 ID·초과매도 등 오류가 하나라도 있으면 체결수량/보유수량이 신뢰 불가하므로 모든 주문 계획을 차단한다.
 - 실패 폐쇄 회귀 테스트를 추가해 총 42개 테스트 통과. 인증이 필요한 실제 자동 수집·게시와 보완값 독립 검증은 계속 미완료다.
+
+## 2026-09-22 정기 실행 경로 보완
+
+- 예약 workflow가 코드만 실행하고 연결 Workspace를 읽거나 Review/Data_Requests를 게시하지 않던 누락을 수정했다. 배포 게이트가 열린 실행은 `--sheets --publish-sheets --llm`으로 지정 장부를 읽고, 전용 자동 탭 게시와 GPT 종합 리포트를 함께 수행한다.
+- 배포 전 검증에 OPENAI_API_KEY/OPENAI_MODEL을 포함했다. 원문 Google credential JSON은 준비 step에만 노출하고 이후 step에는 파일 경로만 전달한다.
+- workflow 회귀 테스트 2개 추가, 총 44개 통과. 실제 동작은 PEPPER_AUTOMATION_ENABLED와 기존 비밀값/ADC가 설정된 뒤의 성공 실행으로만 검증 완료 처리한다. 이번 실행에서 사용자 시트는 수정하지 않았다.

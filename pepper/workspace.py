@@ -202,26 +202,31 @@ def publish_requests(metadata, workspace, previous):
     return requests
 
 
-def read_requests(spreadsheet_id, session):
+def read_requests(spreadsheet_id, session, queue_name='Data_Requests'):
+    if queue_name not in ('Data_Requests', '보완입력'):
+        raise ValueError('Unsupported queue name')
     base = f'https://sheets.googleapis.com/v4/spreadsheets/{quote(spreadsheet_id, safe="")}'
     meta = session.get(base, params={'fields': 'sheets(properties)'}, timeout=60)
     meta.raise_for_status()
     metadata = meta.json()
     existing = {s['properties']['title'] for s in metadata['sheets']}
-    for name in MANAGED[:3]:
+    for name in (MANAGED[:3] if queue_name == 'Data_Requests' else []):
         if name in existing:
             check = session.get(base+f'/values/{name}!A4:W4', timeout=60)
             check.raise_for_status()
             if check.json().get('values') != [REVIEW_HEADERS]:
                 raise ValueError(f'{name}: not a recognized machine-owned view; refusing to clear it')
-    if not any(s['properties']['title'] == 'Data_Requests' for s in metadata['sheets']):
+    if not any(s['properties']['title'] == queue_name for s in metadata['sheets']):
+        if queue_name == '보완입력':
+            raise ValueError('Required research input sheet missing')
         return metadata, []
     # Read the entire queue, including manually extended grids. A fixed bound
     # can hide existing IDs/inputs and cause later publication to overwrite them.
     queue = next(s['properties'] for s in metadata['sheets']
-                 if s['properties']['title'] == 'Data_Requests')
+                 if s['properties']['title'] == queue_name)
     last_row = queue['gridProperties']['rowCount']
-    response = session.get(base+f'/values/Data_Requests!A4:Q{last_row}', params={'valueRenderOption': 'UNFORMATTED_VALUE', 'dateTimeRenderOption': 'FORMATTED_STRING'}, timeout=60)
+    a1 = quote(f"'{queue_name}'!A4:Q{last_row}", safe='!:') if queue_name != 'Data_Requests' else f'Data_Requests!A4:Q{last_row}'
+    response = session.get(base+'/values/'+a1, params={'valueRenderOption': 'UNFORMATTED_VALUE', 'dateTimeRenderOption': 'FORMATTED_STRING'}, timeout=60)
     response.raise_for_status()
     values = response.json().get('values', [])
     parsed = parse_request_values(values)

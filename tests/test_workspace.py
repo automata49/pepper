@@ -10,6 +10,27 @@ def result():
 
 
 class WorkspaceTests(unittest.TestCase):
+    def test_compact_queue_never_reads_legacy_views(self):
+        from urllib.parse import unquote
+        session = Mock()
+        metadata = Mock()
+        metadata.json.return_value = {'sheets': [
+            {'properties': {'title': '보완입력', 'gridProperties': {'rowCount': 2000}}},
+            {'properties': {'title': 'Review_US'}}]}
+        cells = Mock()
+        cells.json.return_value = {'values': [REQUEST_HEADERS, ['id'] + ['']*9 + ['manual']]}
+        session.get.side_effect = [metadata, cells]
+        _, rows = read_requests('test-only', session, queue_name='보완입력')
+        self.assertEqual(session.get.call_count, 2)
+        self.assertTrue(unquote(session.get.call_args.args[0]).endswith("'보완입력'!A4:Q2000"))
+        self.assertEqual(rows[0]['input_value'], 'manual')
+
+    def test_compact_queue_missing_fails_closed(self):
+        session = Mock()
+        session.get.return_value.json.return_value = {'sheets': []}
+        with self.assertRaises(ValueError):
+            read_requests('test-only', session, queue_name='보완입력')
+
     def test_stable_requests_and_human_input_preserved(self):
         r = result()
         first = build_workspace(r)['requests']
