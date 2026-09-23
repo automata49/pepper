@@ -3,7 +3,7 @@
 # 숫자를 바꾸면 version을 올리고 CHANGELOG.md에 이유를 적으세요.
 profile: minervini
 title: Mark Minervini — Trend Template · VCP
-version: 2026.09.1
+version: 2026.09.2
 strategy: swing
 min_coverage: 0.7          # 가중치 기준 데이터가 70% 미만이면 판정 보류
 
@@ -73,20 +73,21 @@ criteria:
       - {score: 0, label: 미달}
     weight: 1
     group: earnings
-    skip_if: [negative_eps]
+    skip_if: [negative_eps, etf]
   - id: eps_acceleration
     label: 분기 EPS 성장 가속
     metric: eps_acceleration
     rule: "value > 0"
     weight: 0.5
     group: earnings
-    skip_if: [negative_eps]
+    skip_if: [negative_eps, etf]
   - id: quarter_sales_growth
     label: 최근 분기 매출 전년비 +20% 이상
     metric: quarter_sales_yoy
     rule: "value >= 0.20"
     weight: 0.5
     group: earnings
+    skip_if: [etf]
 
   # ── 패턴 (group: setup) ──────────────────────────────────────
   - id: vcp

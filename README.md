@@ -36,6 +36,10 @@ python -m unittest discover -s tests -v
 
 설치: `python -m pip install -e '.[automation]'`. [운영 안내](docs/automation.md)와 [구현·차단 상태](docs/BUILD_STATUS.md)를 확인하세요. 공급자 연결 코드와 스케줄 정의는 구현됐지만 키·권한이 없는 서비스까지 운영 완료된 것은 아닙니다. 정기 실행은 실제 인증·게시 검증 전까지 중지합니다.
 
+## Watchlist 보드
+
+ETF 60개 기본 + 관심 주식의 RSI·MACD·Stochastic·RS와 펀더멘털을 한 탭에 표시합니다. [사용법·데이터 출처·시트 정리](docs/watchlist.md) · [4대가 점수 엔진](docs/scoring.md)
+
 ## 평가 체계
 
 | 영역 | 평가 항목 | 결과 |

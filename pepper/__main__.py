@@ -10,7 +10,7 @@ from .sheets import fetch
 
 def main():
     p = argparse.ArgumentParser(description='Read manual Sheets inputs and generate investment reviews')
-    p.add_argument('command', choices=['sync', 'review', 'import-journal', 'automate', 'doctor', 'score', 'rules-diff', 'rules-show'])
+    p.add_argument('command', choices=['sync', 'review', 'import-journal', 'automate', 'doctor', 'score', 'rules-diff', 'rules-show', 'watchlist', 'sheets-clean'])
     p.add_argument('--config', default='config/workspace.json')
     p.add_argument('--snapshot', help='Offline input snapshot (required for review)')
     p.add_argument('--output', default='reports')
@@ -29,8 +29,13 @@ def main():
     p.add_argument('--rules', help='규칙 폴더 (기본: pepper/rules)')
     p.add_argument('--old-rules', help='rules-diff: 비교할 이전 규칙 폴더')
     p.add_argument('--rules-override', help='개인 기준값 덮어쓰기 YAML (공개 저장소에 올리지 않음)')
+    p.add_argument('--watchlist-config', default='config/watchlist.yaml')
+    p.add_argument('--holdings', help='watchlist: ETF 구성 종목 JSON (etf_holdings 형식 행 목록)')
+    p.add_argument('--publish', action='store_true', help='watchlist: 시트 Watchlist_Board 탭에 게시 (쓰기 권한)')
+    p.add_argument('--spreadsheet', help='watchlist/sheets-clean 대상 스프레드시트 ID (기본: config/workspace.json)')
+    p.add_argument('--apply', action='store_true', help='sheets-clean: 백업 후 실제 삭제 (없으면 점검만)')
     args = p.parse_args()
-    if args.command in ('score', 'rules-diff', 'rules-show'):
+    if args.command in ('score', 'rules-diff', 'rules-show', 'watchlist', 'sheets-clean'):
         from .scoring_cli import run as scoring_run
         p.exit(scoring_run(args, p))
     if args.sheets or args.publish_sheets or args.command in ('sync', 'import-journal') or args.journal:

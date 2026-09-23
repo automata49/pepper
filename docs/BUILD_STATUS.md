@@ -104,3 +104,10 @@
 - EPS 3년 성장 전망은 정의 미확인이라 기본 누적→CAGR 변환(보수적). 시트 PEG(0.04)는 연평균 가정과 일치함을 테스트로 확인.
 - 정성 항목(해자·경영진 등)은 LLM 초안이면 UNVERIFIED로 점수 제외. 사용자가 확인(verified=true)해야 반영.
 - 테스트 62개 통과(기존 42 + 신규 20). 실제 종목 데이터·Edgar 수집 연결은 미검증.
+
+## 2026-09-23 Watchlist 보드·공식 데이터 출처·시트 정리 도구
+
+- `pepper watchlist`: ETF 60개 기본 + enabled 주식. RSI(14)·MACD(12/26/9)·Stoch Slow(14/3/3)·RS 백분위(ETF/주식 분리, 레버리지 제외)·Minervini Status·4대가 펀더멘털·ETF 상위10 지표. `Watchlist_Board` 탭 게시 시 수동 열 보존(clear 없이 덮어쓰기).
+- 공식 출처 추가: KRX Open API(한국 일봉·코스피, 분할 보정·날짜 캐시), KIS 종목투자의견(목표가 중앙값). 네이버·Yahoo(FinanceDataReader)는 예비 출처로 '비공식 가격' 표시. 네이버 컨센서스는 사용하지 않음.
+- `pepper sheets-clean`: 숨김 탭 의존성(수식·INDIRECT·차트·피벗·이름 범위) 검사, 기본 점검만, `--apply` 시 Drive 사본 후 삭제.
+- 테스트 80개 통과(기존 62 + 신규 18). 이 개발 환경에서는 KRX·KIS·Yahoo·네이버 접속이 차단돼 실제 호출은 검증하지 못함(모의 응답으로만 검증). 시트 정리와 게시는 사용자 ADC 인증이 필요해 실행하지 않음.

@@ -1,7 +1,7 @@
 # 예외 태그. 태그가 붙으면 criteria의 skip_if에 따라 N_A 처리합니다.
 # when: facts 값으로 자동 판정 (값이 없으면 태그 미부여)
 # tickers: 수동 지정 / facts.tags에 직접 넣어도 됩니다.
-version: 2026.09.1
+version: 2026.09.2
 
 tags:
   negative_equity:
@@ -23,3 +23,6 @@ tags:
   no_rd_disclosure:
     label: R&D 미공시
     when: "rd_expense_missing"
+  etf:
+    label: ETF — 기업 실적·재무 기준 제외 (가격 기준만 평가)
+    when: "asset_class == 'ETF'"
