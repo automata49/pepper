@@ -1,0 +1,94 @@
+# Warren Buffett — 사업의 질·내재가치 (Position)
+# 근거: 높고 꾸준한 ROE, 낮은 부채, 높은 마진, 이익 일관성,
+#       오너 어닝스 기반 내재가치와 안전마진.
+profile: buffett
+title: Warren Buffett — Quality · Owner Earnings
+version: 2026.09.1
+strategy: position
+min_coverage: 0.6
+
+criteria:
+  - id: roe_consistency
+    label: ROE 평균 15% 이상 (최근 5년)
+    metric: roe_avg
+    params: {years: 5, min_years: 3}
+    bands:
+      - {min: 0.20, score: 100, label: 우수}
+      - {min: 0.15, score: 80, label: 양호}
+      - {min: 0.10, score: 40, label: 보통}
+      - {score: 0, label: 취약}
+    weight: 2
+    skip_if: [negative_equity]
+  - id: roe_floor
+    label: 최근 5년 최저 ROE 10% 이상
+    metric: roe_min
+    params: {years: 5, min_years: 3}
+    rule: "value >= 0.10"
+    weight: 1
+    skip_if: [negative_equity]
+  - id: debt_payback
+    label: 장기부채 ÷ 순이익 4년 이하
+    metric: debt_payback_years
+    bands:
+      - {max: 2, score: 100, label: 매우 낮음}
+      - {max: 4, score: 80, label: 낮음}
+      - {max: 6, score: 30, label: 보통}
+      - {score: 0, label: 높음}
+    weight: 1.5
+  - id: debt_to_equity
+    label: 부채/자기자본 0.5 이하
+    metric: debt_to_equity
+    rule: "value <= 0.5"
+    weight: 1
+    skip_if: [negative_equity, financial]
+  - id: gross_margin
+    label: 매출총이익률 40% 이상
+    metric: gross_margin
+    bands:
+      - {min: 0.40, score: 100, label: 우수}
+      - {min: 0.25, score: 50, label: 보통}
+      - {score: 0, label: 낮음}
+    weight: 1
+    skip_if: [financial]
+  - id: earnings_consistency
+    label: 최근 10년 적자 연도 0회
+    metric: eps_loss_years
+    params: {years: 10, min_years: 5}
+    bands:
+      - {max: 0, score: 100, label: 적자 없음}
+      - {max: 1, score: 50, label: 1회}
+      - {score: 0, label: 2회 이상}
+    weight: 1.5
+  - id: margin_of_safety
+    label: 내재가치 대비 25% 이상 할인
+    metric: margin_of_safety
+    bands:
+      - {min: 0.25, score: 100, label: 안전마진 충분}
+      - {min: 0.0, score: 50, label: 내재가치 이하}
+      - {score: 0, label: 고평가}
+    weight: 2
+    skip_if: [nav_company, negative_eps]
+  - id: moat
+    label: 경쟁우위(해자) — 정성 평가
+    metric: qualitative
+    params: {key: moat}
+    source: llm_draft
+    weight: 1.5
+
+# 내재가치(오너 어닝스 DCF) 가정. 시나리오는 g와 r만 바꿉니다.
+valuation:
+  discount_rate: 0.10
+  terminal_growth: 0.03
+  years: 10
+  growth_cap: 0.15            # 성장률 상한 (보수적)
+  growth_source_years: 5      # 과거 EPS CAGR 계산 기간
+  maintenance_capex: min_capex_da   # capex | da | min_capex_da
+  scenarios:
+    bear: {growth_mult: 0.5, discount_rate: 0.12}
+    base: {growth_mult: 1.0, discount_rate: 0.10}
+    bull: {growth_mult: 1.3, discount_rate: 0.09}
+
+verdict:
+  - {min: 75, label: 우량 기업}
+  - {min: 55, label: 보통}
+  - {label: 기준 미달}

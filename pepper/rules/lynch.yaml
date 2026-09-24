@@ -1,0 +1,74 @@
+# Peter Lynch — 종목 분류·적정 가격 (Position)
+# 근거: PEG, 배당 포함 성장 대비 PER, 재고·재무 안정, 6가지 종목 분류.
+profile: lynch
+title: Peter Lynch — PEG · Stock Categories
+version: 2026.09.1
+strategy: position
+min_coverage: 0.6
+
+criteria:
+  - id: peg
+    label: PEG (Forward PER ÷ EPS 연평균 성장률)
+    metric: peg_forward
+    bands:
+      - {max: 0.5, score: 100, label: 매우 양호}
+      - {max: 1.0, score: 75, label: 양호}
+      - {max: 1.5, score: 45, label: 보통}
+      - {max: 2.0, score: 20, label: 부담}
+      - {score: 0, label: 과도}
+    weight: 3
+    skip_if: [cyclical, negative_eps, nav_company]
+  - id: dividend_adjusted_peg
+    label: (성장률 + 배당수익률) ÷ PER ≥ 2 우수
+    metric: dividend_adjusted_growth_ratio
+    bands:
+      - {min: 2.0, score: 100, label: 우수}
+      - {min: 1.5, score: 70, label: 양호}
+      - {min: 1.0, score: 40, label: 보통}
+      - {score: 0, label: 부담}
+    weight: 1
+    skip_if: [cyclical, negative_eps, nav_company]
+  - id: inventory
+    label: 재고 증가율 ≤ 매출 증가율
+    metric: inventory_vs_sales
+    rule: "value <= 0"
+    weight: 1
+    skip_if: [financial]
+  - id: balance_sheet
+    label: 부채/자기자본 0.35 이하
+    metric: debt_to_equity
+    bands:
+      - {max: 0.35, score: 100, label: 튼튼}
+      - {max: 0.8, score: 50, label: 보통}
+      - {score: 0, label: 부담}
+    weight: 1
+    skip_if: [negative_equity, financial]
+  - id: net_cash
+    label: 주당 순현금 양수
+    metric: net_cash_per_share
+    rule: "value > 0"
+    weight: 0.5
+  - id: cyclical_peak_warning
+    label: 경기순환주 — 사이클 정점의 낮은 PER 경고
+    metric: cyclical_low_pe_warning
+    params: {pe_percentile_max: 0.25}
+    rule: "not value"
+    weight: 1
+    only_if: [cyclical]
+
+# 6가지 분류: 성장률로 자동 분류, 경기순환·회생·자산주는 tags로 지정
+categories:
+  slow_grower: {max_growth: 0.05}
+  stalwart: {max_growth: 0.15}
+  fast_grower: {min_growth: 0.20}
+  # 0.15~0.20 구간은 stalwart로 봅니다.
+  tag_categories: [cyclical, turnaround, asset_play]
+
+valuation:
+  fair_pe_floor: 8           # 적정 PER 하한
+  fair_pe_cap: 30            # 적정 PER 상한 (고성장 과대평가 방지)
+
+verdict:
+  - {min: 75, label: 합리적 가격}
+  - {min: 50, label: 보통}
+  - {label: 가격 부담}

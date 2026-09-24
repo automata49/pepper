@@ -1,0 +1,92 @@
+# Pepper Watchlist 설정
+# - etfs: 항상 포함되는 기본 ETF (기존 시트 Price_US/Price_KR의 ETF 목록 + 추가 테마 4개)
+#   빼고 싶으면 해당 줄에 enabled: false 추가
+#   leveraged: 배수 → RS 순위에서 제외, 지표는 표시
+#   holdings: 구성 종목 자료 출처 (globalx | vaneck | kodex | false). DRAM은 ETF만 유지 (구성 종목 수집 안 함)
+# - 개별 주식: 시트 Watchlist 탭에서 enabled 체크한 종목만 추가 (--sheets), 또는 아래 stocks에 직접 적기
+version: 2026.09.1
+
+benchmarks:
+  US: {ticker: SPY, name: S&P 500 (SPY)}
+  KR: {ticker: KOSPI, name: 코스피 지수}
+
+history_days: 400          # 약 1년 반 (MA200·52주·12개월 RS 계산용)
+
+indicators:
+  rsi_period: 14
+  macd: [12, 26, 9]
+  stoch_slow: [14, 3, 3]
+  rsi_overbought: 70
+  rsi_oversold: 30
+  stoch_overbought: 80
+  stoch_oversold: 20
+  rs_weights: {rs_3m: 0.4, rs_6m: 0.2, rs_12m: 0.4}
+
+# 가격 데이터 출처 우선순위 (공식 → 비공식). 키가 없는 출처는 건너뜁니다.
+price_sources:
+  KR: [krx_openapi, fdr]     # krx_openapi: KRX_API_KEY 필요 / fdr: 네이버 기반(비공식)
+  US: [fdr]                  # fdr: Yahoo 기반(비공식). 미국은 무료 공식 일봉 API가 없어 출처를 표시만 함
+
+stocks: []                 # 예: [{ticker: NVDA, market: US}, {ticker: "005930", market: KR}]
+
+etfs:
+  - {ticker: SPY, name: "State Street SPDR S&P 500 ETF Trust", market: US, group: 미국 시장, sector: "Broad Market"}
+  - {ticker: QQQ, name: "Invesco QQQ Trust, Series 1", market: US, group: 미국 시장, sector: "Broad Market"}
+  - {ticker: QQQM, name: "Invesco NASDAQ 100 ETF", market: US, group: 미국 시장, sector: "Broad Market"}
+  - {ticker: TQQQ, name: "ProShares UltraPro QQQ", market: US, group: 미국 시장, sector: "Broad Market", leveraged: 3}
+  - {ticker: RSP, name: "Invesco S&P 500 Equal Weight ETF", market: US, group: 미국 시장, sector: "Broad Market"}
+  - {ticker: IWM, name: "iShares Russell 2000 ETF", market: US, group: 미국 시장, sector: "Broad Market"}
+  - {ticker: DIA, name: "State Street SPDR Dow Jones Indust Avg ETF Trust", market: US, group: 미국 시장, sector: "Broad Market"}
+  - {ticker: VUG, name: "Vanguard Morningstar Growth ETF", market: US, group: 미국 시장, sector: "Broad Market"}
+  - {ticker: IWF, name: "iShares Russell 1000 Growth", market: US, group: 미국 시장, sector: "Broad Market"}
+  - {ticker: XLK, name: "State Street Technology Select Sector SPDR ETF", market: US, group: 미국 섹터, sector: "Information Technology"}
+  - {ticker: XLC, name: "State Street Com Svc Sel Sec SPDR ETF", market: US, group: 미국 섹터, sector: "Communication Services"}
+  - {ticker: XLY, name: "State Street Consumer Discretionary Sector SPDR ETF", market: US, group: 미국 섹터, sector: "Consumer Discretionary"}
+  - {ticker: XLP, name: "State Street Consumer Staples Select Sector SPDR ETF", market: US, group: 미국 섹터, sector: "Consumer Staples"}
+  - {ticker: XLF, name: "State Street Financial Sel Sec SPDR ETF", market: US, group: 미국 섹터, sector: "Financials"}
+  - {ticker: XLV, name: "State Street Health Care Select Sector SPDR ETF", market: US, group: 미국 섹터, sector: "Health Care"}
+  - {ticker: XLI, name: "State Street Industrial Select Sector SPDR ETF", market: US, group: 미국 섹터, sector: "Industrials"}
+  - {ticker: XLE, name: "SPDR Energy Select Sector", market: US, group: 미국 섹터, sector: "Energy"}
+  - {ticker: XLB, name: "State Street Materials Select Sector SPDR ETF", market: US, group: 미국 섹터, sector: "Materials"}
+  - {ticker: XLU, name: "Utilities Select Sector SPDR F", market: US, group: 미국 섹터, sector: "Utilities"}
+  - {ticker: IYR, name: "iShares US Real Estate ETF", market: US, group: 미국 섹터, sector: "Real Estate"}
+  - {ticker: SMH, name: "VanEck Semiconductor ETF", market: US, group: 미국 산업·테마, sector: "Information Technology"}
+  - {ticker: SOXX, name: "iShares Semiconductor ETF", market: US, group: 미국 산업·테마, sector: "Information Technology"}
+  - {ticker: IGV, name: "iShares Expanded Tech-Software Sector ETF", market: US, group: 미국 산업·테마, sector: "Information Technology"}
+  - {ticker: CIBR, name: "First Trust NASDAQ Cybersecurity ETF", market: US, group: 미국 산업·테마, sector: "Information Technology"}
+  - {ticker: XBI, name: "State Street SPDR S&P Biotech ETF", market: US, group: 미국 산업·테마, sector: "Health Care"}
+  - {ticker: KRE, name: "State Street SPDR S&P Regional Banking ETF", market: US, group: 미국 산업·테마, sector: "Financials"}
+  - {ticker: XRT, name: "State Street PDR S&P Retail ETF", market: US, group: 미국 산업·테마, sector: "Consumer Discretionary"}
+  - {ticker: XHB, name: "State Street SPDR S&P Homebuilders ETF", market: US, group: 미국 산업·테마, sector: "Consumer Discretionary"}
+  - {ticker: ITB, name: "iShares US Home Construction ETF", market: US, group: 미국 산업·테마, sector: "Consumer Discretionary"}
+  - {ticker: XOP, name: "State Street SPDR S&P Oil & Gas Expl & Prod ETF", market: US, group: 미국 산업·테마, sector: "Energy"}
+  - {ticker: NLR, name: "VanEck Uranium and Nuclear ETF", market: US, group: 미국 산업·테마, sector: "Energy"}
+  - {ticker: ITA, name: "iShares US Aerospace & Defense ETF", market: US, group: 미국 산업·테마, sector: "Industrials"}
+  - {ticker: XAR, name: "State Street SPDR S&P Aerospace & Defense ETF", market: US, group: 미국 산업·테마, sector: "Industrials"}
+  - {ticker: LIT, name: "Global X Lithium & Battery Tech ETF", market: US, group: 미국 산업·테마, sector: "Materials"}
+  - {ticker: "069500", name: "Samsung KODEX 200 ETF", market: KR, group: 한국 시장, sector: "KOSPI 200"}
+  - {ticker: "102110", name: "Mirae Asset TIGER200 ETF", market: KR, group: 한국 시장, sector: "KOSPI 200"}
+  - {ticker: "229200", name: "Samsung KODEX KOSDAQ150 ETF", market: KR, group: 한국 시장, sector: "KOSDAQ 150"}
+  - {ticker: "232080", name: "Mirae Asset TIGER KOSDAQ 150 ETF", market: KR, group: 한국 시장, sector: "KOSDAQ 150"}
+  - {ticker: "091160", name: "Samsung Kodex Semicon ETF", market: KR, group: 한국 섹터, sector: "Semiconductors"}
+  - {ticker: "396500", name: "MIRAE ASSET TIGER SEMICONDUCTOR TOP 10 ETF", market: KR, group: 한국 섹터, sector: "Semiconductors"}
+  - {ticker: "305720", name: "Samsung KODEX Secondary Battery Industry ETF", market: KR, group: 한국 섹터, sector: "Secondary Batteries"}
+  - {ticker: "305540", name: "Mirae Asset TIGER Secondary Cell ETF", market: KR, group: 한국 섹터, sector: "Secondary Batteries"}
+  - {ticker: "244580", name: "Samsung KODEX BIO ETF", market: KR, group: 한국 섹터, sector: "Biotechnology"}
+  - {ticker: "364970", name: "Mirae Asset TIGER KRX BIO Top 10 ETF", market: KR, group: 한국 섹터, sector: "Biotechnology"}
+  - {ticker: "0080G0", name: "Samsung KODEX defense TOP 10 ETF", market: KR, group: 한국 섹터, sector: "Aerospace & Defense"}
+  - {ticker: "463250", name: "MIRAE ASSET TIGER K-DEFENSE INDUSTRY&SPACE ETF", market: KR, group: 한국 섹터, sector: "Aerospace & Defense"}
+  - {ticker: "0115D0", name: "SAMSUNG KODEX SHIPBUILDING TOP10 ETF", market: KR, group: 한국 섹터, sector: "Shipbuilding"}
+  - {ticker: "494670", name: "Mirae Asset TIGER Shipbuilding TOP10 ETF", market: KR, group: 한국 섹터, sector: "Shipbuilding"}
+  - {ticker: "091180", name: "Samsung Kodex Autos ETF", market: KR, group: 한국 섹터, sector: "Automobiles"}
+  - {ticker: "138540", name: "Mirae Asset TIGER Hyundai Motor Group ETF", market: KR, group: 한국 섹터, sector: "Automobiles / Mobility"}
+  - {ticker: "091170", name: "Samsung KODEX Banks ETF", market: KR, group: 한국 섹터, sector: "Banks"}
+  - {ticker: "091220", name: "Mirae Asset TIGER Banks ETF", market: KR, group: 한국 섹터, sector: "Banks"}
+  - {ticker: "487240", name: "Samsung KODEX AI Electric Power Core FacilitiesETF", market: KR, group: 한국 섹터, sector: "Power Grid Equipment"}
+  - {ticker: "139230", name: "Mirae Asset TIGER200 Heavy Industry ETF", market: KR, group: 한국 섹터, sector: "Heavy Industry"}
+  - {ticker: "266360", name: "SAMSUNG KODEX K-Content ETF", market: KR, group: 한국 섹터, sector: "Media & Entertainment"}
+  - {ticker: "228810", name: "MIRAE ASSET TIGER MEDIA CONTENTS ETF", market: KR, group: 한국 섹터, sector: "Media & Content"}
+  - {ticker: CLOU, name: "Global X Cloud Computing ETF", market: US, group: 추가 테마, sector: "Cloud", holdings: globalx}
+  - {ticker: BUG, name: "Global X Cybersecurity ETF", market: US, group: 추가 테마, sector: "Cybersecurity", holdings: globalx}
+  - {ticker: CRAK, name: "VanEck Oil Refiners ETF", market: US, group: 추가 테마, sector: "Oil Refiners", holdings: vaneck}
+  - {ticker: DRAM, name: "DRAM (Roundhill)", market: US, group: 추가 테마, sector: "Memory", holdings: false}

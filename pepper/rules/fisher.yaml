@@ -1,0 +1,104 @@
+# Philip Fisher — 성장의 지속성 (15개 점검 중 정량 대용 + 정성)
+# 정성 항목은 LLM 초안(UNVERIFIED) → 시트에서 사용자가 확인해야 점수에 반영됩니다.
+profile: fisher
+title: Philip Fisher — Scuttlebutt 15 Points
+version: 2026.09.1
+strategy: position
+min_coverage: 0.5
+
+criteria:
+  # 1. 수년간 매출 성장 여력
+  - id: sales_growth_runway
+    label: 5년 매출 CAGR 10% 이상
+    metric: revenue_cagr
+    params: {years: 5, min_years: 3}
+    bands:
+      - {min: 0.20, score: 100, label: 고성장}
+      - {min: 0.10, score: 75, label: 성장}
+      - {min: 0.05, score: 30, label: 완만}
+      - {score: 0, label: 정체}
+    weight: 2
+  # 2~3. 신제품 의지·R&D 효과
+  - id: rd_intensity
+    label: R&D/매출 비중
+    metric: rd_to_sales
+    bands:
+      - {min: 0.10, score: 100, label: 높음}
+      - {min: 0.03, score: 60, label: 보통}
+      - {score: 20, label: 낮음}
+    weight: 0.5
+    skip_if: [no_rd_disclosure]
+  - id: rd_productivity
+    label: 매출 증가분 ÷ 누적 R&D (3년)
+    metric: rd_productivity
+    params: {years: 3}
+    bands:
+      - {min: 1.0, score: 100, label: 효율적}
+      - {min: 0.3, score: 50, label: 보통}
+      - {score: 0, label: 비효율}
+    weight: 1
+    skip_if: [no_rd_disclosure]
+  # 5. 충분한 이익률
+  - id: operating_margin
+    label: 영업이익률 ≥ 업종 중앙값
+    metric: op_margin_vs_industry
+    rule: "value >= 0"
+    weight: 1
+    skip_if: [financial]
+  # 6. 이익률 유지·개선
+  - id: margin_trend
+    label: 영업이익률 3년 추세 유지·개선
+    metric: op_margin_trend
+    params: {years: 3}
+    bands:
+      - {min: 0.02, score: 100, label: 개선}
+      - {min: -0.01, score: 70, label: 유지}
+      - {score: 0, label: 악화}
+    weight: 1.5
+    skip_if: [financial]
+  # 13. 주식 희석
+  - id: dilution
+    label: 발행주식수 연평균 증가 2% 이하
+    metric: share_dilution_cagr
+    params: {years: 3}
+    bands:
+      - {max: 0.0, score: 100, label: 감소·유지}
+      - {max: 0.02, score: 70, label: 소폭}
+      - {score: 0, label: 희석 과다}
+    weight: 1
+  # 정성 항목 (LLM 초안 → 사용자 확인)
+  - id: sales_organization
+    label: 영업 조직의 우수성
+    metric: qualitative
+    params: {key: sales_organization}
+    source: llm_draft
+    weight: 0.5
+  - id: management_depth
+    label: 경영진의 깊이·후계
+    metric: qualitative
+    params: {key: management_depth}
+    source: llm_draft
+    weight: 1
+  - id: long_term_outlook
+    label: 장기 이익 전망 중시
+    metric: qualitative
+    params: {key: long_term_outlook}
+    source: llm_draft
+    weight: 1
+  - id: candor_integrity
+    label: 경영진의 솔직함·정직성
+    metric: qualitative
+    params: {key: candor_integrity}
+    source: llm_draft
+    weight: 1
+  - id: industry_advantage
+    label: 업종 내 고유한 강점
+    metric: qualitative
+    params: {key: industry_advantage}
+    source: llm_draft
+    weight: 1
+
+verdict:
+  - {min: 75, label: 지속 성장 기업}
+  - {min: 55, label: 성장 확인 필요}
+  - {label: 기준 미달}
